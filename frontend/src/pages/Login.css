@@ -1,0 +1,846 @@
+/* =========================================================
+   TRUSTVISION LOGIN PAGE
+   ========================================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+.trust-login {
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  min-height: 620px;
+  display: grid;
+  grid-template-columns: 52% 48%;
+  overflow: hidden;
+
+  background:
+    linear-gradient(
+      135deg,
+      #edf6ff 0%,
+      #f7fbff 50%,
+      #eef7ff 100%
+    );
+
+  color: #10244a;
+}
+
+
+/* =========================================================
+   WATERMARK
+   ========================================================= */
+
+.trust-watermark {
+  position: absolute;
+
+  width: 500px;
+  height: auto;
+
+  right: -130px;
+  bottom: -130px;
+
+  opacity: 0.035;
+
+  pointer-events: none;
+  user-select: none;
+
+  z-index: 0;
+}
+
+
+/* =========================================================
+   LEFT SIDE
+   ========================================================= */
+
+.trust-left {
+  position: relative;
+  height: 100dvh;
+  min-height: 620px;
+
+  overflow: hidden;
+
+  padding: 42px 7vw 30px;
+
+  background:
+    radial-gradient(
+      circle at 15% 10%,
+      rgba(255,255,255,0.95),
+      transparent 32%
+    ),
+    linear-gradient(
+      145deg,
+      #f0f8ff 0%,
+      #e5f2ff 60%,
+      #d8ebff 100%
+    );
+}
+
+.trust-left-content {
+  position: relative;
+  z-index: 5;
+
+  max-width: 650px;
+}
+
+
+/* =========================================================
+   ACTUAL TRUSTVISION LOGO
+   ========================================================= */
+
+.trust-main-logo {
+  display: block;
+
+  width: 360px;
+  max-width: 100%;
+  height: auto;
+
+  object-fit: contain;
+  object-position: left center;
+}
+
+
+/* =========================================================
+   LEFT TEXT
+   ========================================================= */
+
+.trust-subtitle {
+  margin: 20px 0 0;
+
+  color: #536b96;
+
+  font-size: clamp(18px, 1.45vw, 23px);
+  line-height: 1.45;
+
+  font-weight: 500;
+}
+
+.trust-line {
+  width: 68px;
+  height: 5px;
+
+  margin-top: 30px;
+
+  border-radius: 10px;
+
+  background: #0799f7;
+}
+
+.trust-kicker {
+  margin: 20px 0 0;
+
+  color: #086fe5;
+
+  font-size: 14px;
+  font-weight: 800;
+
+  letter-spacing: 4px;
+}
+
+.trust-heading {
+  margin: 13px 0 0;
+
+  color: #10234a;
+
+  font-size: clamp(42px, 4.3vw, 65px);
+  line-height: 1.03;
+
+  letter-spacing: -2.5px;
+
+  font-weight: 800;
+}
+
+.trust-heading span {
+  color: #0875e5;
+}
+
+.trust-description {
+  max-width: 580px;
+
+  margin: 20px 0 0;
+
+  color: #60769b;
+
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+
+/* =========================================================
+   FEATURES
+   ========================================================= */
+
+.trust-features {
+  display: flex;
+  flex-direction: column;
+
+  gap: 13px;
+
+  margin-top: 25px;
+}
+
+.trust-feature {
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+}
+
+.trust-feature-icon {
+  width: 40px;
+  height: 40px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 11px;
+
+  color: #0875e5;
+
+  background: rgba(255,255,255,0.82);
+
+  border: 1px solid #d1e6fb;
+
+  box-shadow: 0 5px 15px rgba(30,100,180,0.06);
+}
+
+.trust-feature strong {
+  display: block;
+
+  color: #183258;
+
+  font-size: 14px;
+}
+
+.trust-feature span {
+  display: block;
+
+  margin-top: 2px;
+
+  color: #7186a7;
+
+  font-size: 12px;
+}
+
+
+/* =========================================================
+   ENVIRONMENT
+   ========================================================= */
+
+.trust-environment {
+  display: flex;
+  align-items: center;
+
+  gap: 9px;
+
+  margin-top: 22px;
+
+  color: #55739e;
+
+  font-size: 13px;
+}
+
+.trust-environment svg {
+  color: #15956d;
+}
+
+
+/* =========================================================
+   BLUE DECORATION
+   ========================================================= */
+
+.trust-blue-shape {
+  position: absolute;
+
+  width: 720px;
+  height: 310px;
+
+  left: -100px;
+  bottom: -170px;
+
+  border-radius: 50%;
+
+  background:
+    linear-gradient(
+      135deg,
+      #074bc4,
+      #008fe9
+    );
+
+  transform: rotate(-8deg);
+
+  opacity: 0.95;
+}
+
+.trust-glow-circle {
+  position: absolute;
+
+  width: 260px;
+  height: 260px;
+
+  left: 120px;
+  top: -90px;
+
+  border-radius: 50%;
+
+  background: rgba(51,190,255,0.35);
+
+  filter: blur(30px);
+}
+
+.trust-glow-circle.second {
+  width: 180px;
+  height: 180px;
+
+  left: 430px;
+  top: 50px;
+
+  background: rgba(255,255,255,0.15);
+}
+
+
+/* =========================================================
+   RIGHT SIDE
+   ========================================================= */
+
+.trust-right {
+  position: relative;
+  z-index: 2;
+
+  height: 100dvh;
+  min-height: 620px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 30px 5vw;
+
+  overflow: hidden;
+}
+
+
+/* =========================================================
+   LOGIN CARD
+   ========================================================= */
+
+.trust-card {
+  width: min(100%, 540px);
+
+  padding: 43px 52px 32px;
+
+  border-radius: 24px;
+
+  border: 1px solid #c9def5;
+
+  background: rgba(255,255,255,0.96);
+
+  box-shadow:
+    0 25px 65px rgba(30,80,140,0.12),
+    0 4px 15px rgba(30,80,140,0.05);
+}
+
+
+/* =========================================================
+   CARD LOGO
+   ========================================================= */
+
+.trust-card-logo {
+  display: block;
+
+  width: 245px;
+  max-width: 80%;
+  height: auto;
+
+  object-fit: contain;
+}
+
+
+/* =========================================================
+   CARD HEADING
+   ========================================================= */
+
+.trust-card-heading h2 {
+  margin: 31px 0 6px;
+
+  color: #10244a;
+
+  font-size: 39px;
+  line-height: 1.1;
+
+  letter-spacing: -1.5px;
+
+  font-weight: 800;
+}
+
+.trust-card-heading p {
+  margin: 0 0 28px;
+
+  color: #7185a8;
+
+  font-size: 17px;
+}
+
+
+/* =========================================================
+   FORM
+   ========================================================= */
+
+.trust-form {
+  display: flex;
+  flex-direction: column;
+
+  gap: 19px;
+}
+
+.trust-form-group {
+  display: flex;
+  flex-direction: column;
+
+  gap: 7px;
+}
+
+.trust-form-group label {
+  color: #142a51;
+
+  font-size: 15px;
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   INPUT
+   ========================================================= */
+
+.trust-input {
+  height: 59px;
+
+  display: flex;
+  align-items: center;
+
+  overflow: hidden;
+
+  border: 2px solid #c9e0fb;
+  border-radius: 12px;
+
+  background: #f8fbff;
+
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.trust-input:focus-within {
+  border-color: #1687ed;
+
+  box-shadow:
+    0 0 0 4px rgba(22,135,237,0.09);
+}
+
+.trust-input-icon {
+  width: 60px;
+  height: 100%;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #60799f;
+
+  border-right: 1px solid #dbeafa;
+
+  background: white;
+}
+
+.trust-input input {
+  flex: 1;
+
+  min-width: 0;
+
+  height: 100%;
+
+  padding: 0 15px;
+
+  border: 0;
+  outline: 0;
+
+  background: transparent;
+
+  color: #152b50;
+
+  font-size: 16px;
+}
+
+.trust-input input::placeholder {
+  color: #9aaac0;
+}
+
+
+/* =========================================================
+   PASSWORD BUTTON
+   ========================================================= */
+
+.trust-password-toggle {
+  width: 60px;
+  height: 100%;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 0;
+  border-left: 1px solid #dbeafa;
+
+  background: white;
+
+  color: #61799d;
+
+  cursor: pointer;
+}
+
+.trust-password-toggle:hover {
+  color: #0875e5;
+}
+
+
+/* =========================================================
+   ERROR
+   ========================================================= */
+
+.trust-error {
+  padding: 11px 14px;
+
+  border: 1px solid #f3b8b8;
+
+  border-radius: 9px;
+
+  background: #fff5f5;
+
+  color: #b42318;
+
+  font-size: 13px;
+}
+
+
+/* =========================================================
+   SIGN IN BUTTON
+   ========================================================= */
+
+.trust-signin {
+  width: 100%;
+  height: 62px;
+
+  margin-top: 2px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 13px;
+
+  border: 0;
+  border-radius: 12px;
+
+  background:
+    linear-gradient(
+      100deg,
+      #086be5,
+      #078df0
+    );
+
+  color: white;
+
+  font-size: 18px;
+  font-weight: 750;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 13px 25px rgba(0,112,230,0.2);
+
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
+}
+
+.trust-signin:hover {
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 17px 30px rgba(0,112,230,0.25);
+}
+
+.trust-signin:disabled {
+  cursor: not-allowed;
+
+  opacity: 0.7;
+
+  transform: none;
+}
+
+
+/* =========================================================
+   SECURITY
+   ========================================================= */
+
+.trust-security {
+  margin-top: 25px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 9px;
+
+  color: #15956d;
+
+  font-size: 14px;
+}
+
+.trust-security svg {
+  stroke-width: 2.2;
+}
+
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
+.trust-footer {
+  margin-top: 23px;
+  padding-top: 18px;
+
+  border-top: 1px solid #d8e5f5;
+
+  text-align: center;
+
+  color: #8aa0c2;
+
+  font-size: 12px;
+}
+
+
+/* =========================================================
+   SHORT LAPTOP SCREENS
+   Prevent unnecessary scrolling
+   ========================================================= */
+
+@media (min-width: 851px) and (max-height: 750px) {
+
+  .trust-left {
+    padding-top: 25px;
+    padding-bottom: 20px;
+  }
+
+  .trust-main-logo {
+    width: 290px;
+  }
+
+  .trust-subtitle {
+    margin-top: 12px;
+    font-size: 16px;
+  }
+
+  .trust-line {
+    margin-top: 18px;
+  }
+
+  .trust-kicker {
+    margin-top: 13px;
+    font-size: 12px;
+  }
+
+  .trust-heading {
+    font-size: 43px;
+  }
+
+  .trust-description {
+    margin-top: 12px;
+    font-size: 14px;
+  }
+
+  .trust-features {
+    margin-top: 15px;
+    gap: 8px;
+  }
+
+  .trust-feature-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .trust-environment {
+    margin-top: 13px;
+    font-size: 12px;
+  }
+
+  .trust-card {
+    padding: 30px 42px 24px;
+  }
+
+  .trust-card-logo {
+    width: 205px;
+  }
+
+  .trust-card-heading h2 {
+    margin-top: 20px;
+    font-size: 32px;
+  }
+
+  .trust-card-heading p {
+    margin-bottom: 18px;
+    font-size: 15px;
+  }
+
+  .trust-form {
+    gap: 13px;
+  }
+
+  .trust-input {
+    height: 51px;
+  }
+
+  .trust-signin {
+    height: 54px;
+  }
+
+  .trust-security {
+    margin-top: 16px;
+  }
+
+  .trust-footer {
+    margin-top: 15px;
+    padding-top: 12px;
+  }
+}
+
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 850px) {
+
+  .trust-login {
+    height: auto;
+    min-height: 100dvh;
+
+    display: block;
+
+    overflow-y: auto;
+  }
+
+  .trust-left {
+    height: auto;
+    min-height: 570px;
+
+    padding: 35px 28px 70px;
+  }
+
+  .trust-main-logo {
+    width: 290px;
+  }
+
+  .trust-heading {
+    font-size: 48px;
+  }
+
+  .trust-blue-shape {
+    width: 650px;
+    left: -180px;
+  }
+
+  .trust-right {
+    height: auto;
+    min-height: auto;
+
+    padding: 30px 20px 45px;
+  }
+
+  .trust-card {
+    width: 100%;
+    max-width: 540px;
+  }
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 520px) {
+
+  .trust-left {
+    min-height: 540px;
+
+    padding: 28px 20px 55px;
+  }
+
+  .trust-main-logo {
+    width: 235px;
+  }
+
+  .trust-subtitle {
+    font-size: 16px;
+  }
+
+  .trust-kicker {
+    font-size: 11px;
+    letter-spacing: 3px;
+  }
+
+  .trust-heading {
+    font-size: 39px;
+    letter-spacing: -1.5px;
+  }
+
+  .trust-description {
+    font-size: 15px;
+  }
+
+  .trust-feature strong {
+    font-size: 13px;
+  }
+
+  .trust-feature span {
+    font-size: 11px;
+  }
+
+  .trust-right {
+    padding: 20px 14px 35px;
+  }
+
+  .trust-card {
+    padding: 30px 23px 25px;
+
+    border-radius: 19px;
+  }
+
+  .trust-card-logo {
+    width: 190px;
+  }
+
+  .trust-card-heading h2 {
+    margin-top: 27px;
+
+    font-size: 32px;
+  }
+
+  .trust-card-heading p {
+    font-size: 15px;
+  }
+
+  .trust-watermark {
+    width: 300px;
+
+    right: -100px;
+    bottom: -50px;
+  }
+}

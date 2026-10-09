@@ -20,10 +20,13 @@ def seed_admin():
         if existing_admin:
             existing_admin.full_name = "System Administrator"
             existing_admin.email = "admin@trustvision.local"
-
+            existing_admin.password_hash = hash_password("Admin@123")
+            existing_admin.role = "SUPER_ADMIN"
+            existing_admin.is_active = True
+            
             db.commit()
-
-            print("Admin profile information updated successfully.")
+            
+            print("Admin account updated successfully.")
             return
 
         # -------------------------------------------------

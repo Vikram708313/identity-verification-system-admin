@@ -1,0 +1,6 @@
+.env
+__pycache__/
+*.pyc
+identity_verification.db
+protected_documents/
+protected_faces/

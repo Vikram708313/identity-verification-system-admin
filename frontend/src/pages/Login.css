@@ -844,3 +844,91 @@
     bottom: -50px;
   }
 }
+
+/* Login method switch */
+
+.trust-login-methods {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 24px 0 22px;
+  padding: 5px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.trust-method {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  min-height: 44px;
+  padding: 10px 14px;
+
+  border: none;
+  border-radius: 9px;
+
+  background: transparent;
+  color: #64748b;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.trust-method:hover {
+  color: #334155;
+  background: #ffffff;
+}
+
+.trust-method.active {
+  background: #ffffff;
+  color: #2563eb;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.trust-method svg {
+  flex-shrink: 0;
+}
+
+
+/* OTP success message */
+
+.trust-success {
+  margin: 10px 0 14px;
+  padding: 11px 13px;
+
+  border-radius: 8px;
+  border: 1px solid #bbf7d0;
+
+  background: #f0fdf4;
+  color: #166534;
+
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+
+/* Back button on OTP screen */
+
+.trust-otp-back {
+  width: 100%;
+  margin-top: 12px;
+
+  border: none;
+  background: transparent;
+
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+
+  cursor: pointer;
+}
+
+.trust-otp-back:hover {
+  color: #2563eb;
+}

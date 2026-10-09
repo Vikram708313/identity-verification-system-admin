@@ -12,9 +12,6 @@ import {
   LockKeyhole,
   ScrollText,
   ChevronRight,
-  Sun,
-  Moon,
-  Monitor,
   Type,
   Languages,
 } from "lucide-react";
@@ -33,10 +30,6 @@ export default function Profile() {
   const [loadingAdmin, setLoadingAdmin] = useState(true);
 
   const [activeTab, setActiveTab] = useState("account");
-
-  const [appearance, setAppearance] = useState(
-    localStorage.getItem("appearance") || "light"
-  );
 
   const [font, setFont] = useState(
     localStorage.getItem("font") || "system"
@@ -66,32 +59,6 @@ export default function Profile() {
 
     loadAdminProfile();
   }, []);
-
-
-  // APPLY APPEARANCE
-  useEffect(() => {
-    const root = document.documentElement;
-
-    if (appearance === "dark") {
-      root.setAttribute("data-theme", "dark");
-    } else if (appearance === "system") {
-      const prefersDark = window.matchMedia(
-        "(prefers-color-scheme: dark)"
-      ).matches;
-
-      root.setAttribute(
-        "data-theme",
-        prefersDark ? "dark" : "light"
-      );
-    } else {
-      root.setAttribute("data-theme", "light");
-    }
-
-    localStorage.setItem(
-      "appearance",
-      appearance
-    );
-  }, [appearance]);
 
 
   // SAVE FONT
@@ -364,82 +331,8 @@ export default function Profile() {
                 <h2>Settings</h2>
 
                 <p>
-                  Customize how TrustVision looks and behaves.
+                  Customize your TrustVision preferences.
                 </p>
-
-              </div>
-
-
-              {/* APPEARANCE */}
-
-              <div className="settings-card">
-
-                <div className="settings-card-header">
-
-                  <div className="settings-card-icon">
-                    <Sun size={19} />
-                  </div>
-
-                  <div>
-
-                    <h3>Appearance</h3>
-
-                    <p>
-                      Choose how the application looks.
-                    </p>
-
-                  </div>
-
-                </div>
-
-
-                <div className="setting-options">
-
-                  <button
-                    className={`setting-option ${
-                      appearance === "light"
-                        ? "selected"
-                        : ""
-                    }`}
-                    onClick={() => setAppearance("light")}
-                  >
-                    <Sun size={18} />
-
-                    <span>Light</span>
-
-                  </button>
-
-
-                  <button
-                    className={`setting-option ${
-                      appearance === "dark"
-                        ? "selected"
-                        : ""
-                    }`}
-                    onClick={() => setAppearance("dark")}
-                  >
-                    <Moon size={18} />
-
-                    <span>Dark</span>
-
-                  </button>
-
-
-                  <button
-                    className={`setting-option ${
-                      appearance === "system"
-                        ? "selected"
-                        : ""
-                    }`}
-                    onClick={() => setAppearance("system")}
-                  >
-                    <Monitor size={18} />
-
-                    <span>System</span>
-
-                  </button>
-
-                </div>
 
               </div>
 

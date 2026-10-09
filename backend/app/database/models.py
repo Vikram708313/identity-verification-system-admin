@@ -242,6 +242,16 @@ class Audit(Base):
         nullable=False
     )
 
+    previous_hash: Mapped[str] = mapped_column(
+        String(64),
+        nullable=True
+    )
+
+    record_hash: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False
+    )
+
 
 class Verification(Base):
     __tablename__ = "verifications"
@@ -318,6 +328,60 @@ class Verification(Base):
     reason: Mapped[str] = mapped_column(
         Text,
         nullable=True
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False
+    )
+
+
+class OTPCode(Base):
+    __tablename__ = "otp_codes"
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    admin_id: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        index=True
+    )
+
+    channel: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False
+    )
+
+    destination: Mapped[str] = mapped_column(
+        String(150),
+        nullable=False
+    )
+
+    otp_hash: Mapped[str] = mapped_column(
+        String(128),
+        nullable=False
+    )
+
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False
+    )
+
+    attempts: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        nullable=False
+    )
+
+    is_used: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False
     )
 
     created_at: Mapped[datetime] = mapped_column(

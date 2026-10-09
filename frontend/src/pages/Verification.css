@@ -1395,3 +1395,15 @@
   }
 
 }
+
+.face-camera-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 18px;
+  display: block;
+  background: #111827;
+  transform: scaleX(-1);
+  position: relative;
+  z-index: 2;
+}

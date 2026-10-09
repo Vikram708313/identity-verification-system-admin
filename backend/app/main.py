@@ -2,8 +2,9 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
-from app.auth.dependencies import get_current_admin
-from app.auth.routes import router as auth_router
+# =====================================================
+# DATABASE
+# =====================================================
 
 from app.database.connection import (
     get_db,
@@ -14,16 +15,44 @@ from app.database.models import (
     Person,
     Watchlist,
     IdentityDocument,
+    Audit,
 )
 
-from app.verification.routes import (
-    router as verification_router,
-)
+# =====================================================
+# AUTH
+# =====================================================
+
+from app.auth.routes import router as auth_router
+from app.auth.otp import router as otp_router
+from app.auth.dependencies import get_current_admin
+
+# =====================================================
+# OTHER ROUTERS
+# =====================================================
+
+from app.face.routes import router as face_router
+from app.verification.routes import router as verification_router
+from app.people.routes import router as people_router
+from app.documents.routes import router as documents_router
+from app.qr.routes import router as qr_router
+
+# =====================================================
+# AUDIT
+# =====================================================
+
+from app.audit import verify_audit_chain
 
 
-# Initialize database and apply required schema updates
+# =====================================================
+# INITIALIZE DATABASE
+# =====================================================
+
 initialize_database()
 
+
+# =====================================================
+# CREATE FASTAPI APP
+# =====================================================
 
 app = FastAPI(
     title="AI Identity Verification System",
@@ -32,9 +61,9 @@ app = FastAPI(
 )
 
 
-# ---------------------------------------------------------
+# =====================================================
 # CORS
-# ---------------------------------------------------------
+# =====================================================
 
 app.add_middleware(
     CORSMiddleware,
@@ -48,17 +77,43 @@ app.add_middleware(
 )
 
 
-# ---------------------------------------------------------
-# Routers
-# ---------------------------------------------------------
+# =====================================================
+# REGISTER ROUTERS
+# =====================================================
+
+print("========================================")
+print("REGISTERING API ROUTERS")
+print("========================================")
 
 app.include_router(auth_router)
+print("AUTH ROUTER REGISTERED")
+
+app.include_router(otp_router)
+print("OTP ROUTER REGISTERED")
+
+app.include_router(face_router)
+print("FACE ROUTER REGISTERED")
+
 app.include_router(verification_router)
+print("VERIFICATION ROUTER REGISTERED")
+
+app.include_router(people_router)
+print("PEOPLE ROUTER REGISTERED")
+
+app.include_router(documents_router)
+print("DOCUMENT ROUTER REGISTERED")
+
+app.include_router(qr_router)
+print("QR ROUTER REGISTERED")
+
+print("========================================")
+print("ROUTERS REGISTERED")
+print("========================================")
 
 
-# ---------------------------------------------------------
-# Root
-# ---------------------------------------------------------
+# =====================================================
+# ROOT
+# =====================================================
 
 @app.get("/")
 def root():
@@ -69,9 +124,9 @@ def root():
     }
 
 
-# ---------------------------------------------------------
-# Health
-# ---------------------------------------------------------
+# =====================================================
+# HEALTH
+# =====================================================
 
 @app.get("/health")
 def health():
@@ -80,9 +135,9 @@ def health():
     }
 
 
-# ---------------------------------------------------------
-# People
-# ---------------------------------------------------------
+# =====================================================
+# PEOPLE
+# =====================================================
 
 @app.get("/people")
 def get_people(
@@ -103,9 +158,9 @@ def get_people(
     ]
 
 
-# ---------------------------------------------------------
-# Documents
-# ---------------------------------------------------------
+# =====================================================
+# DOCUMENTS
+# =====================================================
 
 @app.get("/documents")
 def get_documents(
@@ -120,7 +175,6 @@ def get_documents(
             "person_id": document.person_id,
             "document_type": document.document_type,
             "document_number": document.document_number,
-            "file_path": document.file_path,
             "file_hash": document.file_hash,
             "created_at": document.created_at,
             "updated_at": document.updated_at,
@@ -129,13 +183,14 @@ def get_documents(
     ]
 
 
-# ---------------------------------------------------------
-# Watchlist
-# ---------------------------------------------------------
+# =====================================================
+# WATCHLIST
+# =====================================================
 
 @app.get("/watchlist")
 def get_watchlist(
     db: Session = Depends(get_db),
+    current_admin=Depends(get_current_admin),
 ):
     records = db.query(Watchlist).all()
 
@@ -149,3 +204,64 @@ def get_watchlist(
         }
         for record in records
     ]
+
+
+# =====================================================
+# AUDIT
+# =====================================================
+
+@app.get("/audit")
+def get_audit_logs(
+    db: Session = Depends(get_db),
+    current_admin=Depends(get_current_admin),
+):
+    records = (
+        db.query(Audit)
+        .order_by(Audit.id.desc())
+        .all()
+    )
+
+    return [
+        {
+            "id": record.id,
+            "username": record.username,
+            "action": record.action,
+            "details": record.details,
+            "timestamp": record.timestamp,
+            "previous_hash": record.previous_hash,
+            "record_hash": record.record_hash,
+        }
+        for record in records
+    ]
+
+
+# =====================================================
+# AUDIT INTEGRITY
+# =====================================================
+
+@app.get("/audit/integrity")
+def check_audit_integrity(
+    db: Session = Depends(get_db),
+    current_admin=Depends(get_current_admin),
+):
+    return verify_audit_chain(db)
+
+
+# =====================================================
+# PRINT FINAL ROUTES
+# =====================================================
+
+print("========================================")
+print("FINAL REGISTERED ROUTES")
+print("========================================")
+
+for route in app.routes:
+    path = getattr(route, "path", None)
+    methods = getattr(route, "methods", None)
+
+    if path:
+        print(
+            f"{methods if methods else ''} {path}"
+        )
+
+print("========================================")

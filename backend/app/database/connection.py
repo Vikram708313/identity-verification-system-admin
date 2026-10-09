@@ -83,7 +83,6 @@ def initialize_database():
                     )
                 )
 
-
     # =====================================================
     # ADMINS
     # Add full_name and email if they do not already exist.
@@ -99,7 +98,6 @@ def initialize_database():
             column["name"]
             for column in columns
         }
-
 
         # -----------------------------------------
         # Add full_name
@@ -118,7 +116,6 @@ def initialize_database():
                     )
                 )
 
-
         # -----------------------------------------
         # Add email
         # -----------------------------------------
@@ -132,6 +129,56 @@ def initialize_database():
                         """
                         ALTER TABLE admins
                         ADD COLUMN email VARCHAR(150)
+                        """
+                    )
+                )
+
+    # =====================================================
+    # AUDIT LOGS
+    # Add hash-chain fields if they do not already exist.
+    # =====================================================
+
+    if "audit_logs" in inspector.get_table_names():
+
+        columns = inspector.get_columns(
+            "audit_logs"
+        )
+
+        column_names = {
+            column["name"]
+            for column in columns
+        }
+
+        # -----------------------------------------
+        # Add previous_hash
+        # -----------------------------------------
+
+        if "previous_hash" not in column_names:
+
+            with engine.begin() as connection:
+
+                connection.execute(
+                    text(
+                        """
+                        ALTER TABLE audit_logs
+                        ADD COLUMN previous_hash VARCHAR(64)
+                        """
+                    )
+                )
+
+        # -----------------------------------------
+        # Add record_hash
+        # -----------------------------------------
+
+        if "record_hash" not in column_names:
+
+            with engine.begin() as connection:
+
+                connection.execute(
+                    text(
+                        """
+                        ALTER TABLE audit_logs
+                        ADD COLUMN record_hash VARCHAR(64)
                         """
                     )
                 )

@@ -4149,27 +4149,42 @@ body {
     padding-bottom: 88px;
   }
 }
-
 /* =========================================================
    TRUSTVISION GLOBAL THEME
    ========================================================= */
 
+/* ---------------------------------------------------------
+   LIGHT THEME
+   --------------------------------------------------------- */
+
 :root {
   --tv-bg: #f4f7fb;
+
   --tv-card: #ffffff;
   --tv-card-secondary: #f7f9fc;
+
   --tv-text: #172033;
   --tv-text-secondary: #687386;
   --tv-text-muted: #8a96a7;
+
   --tv-border: #e1e7ef;
   --tv-border-light: #edf1f5;
+
   --tv-input: #ffffff;
   --tv-hover: #f4f7fb;
   --tv-table-header: #f8fafc;
+
+  --tv-icon-bg: #f1f4f8;
 }
+
+
+/* ---------------------------------------------------------
+   DARK THEME
+   --------------------------------------------------------- */
 
 :root[data-theme="dark"] {
   --tv-bg: #20252d;
+
   --tv-card: #292f38;
   --tv-card-secondary: #252b34;
 
@@ -4182,12 +4197,15 @@ body {
 
   --tv-input: #222831;
   --tv-hover: #323943;
-
   --tv-table-header: #2d343e;
+
+  --tv-icon-bg: #303741;
 }
 
 
-/* Global application surfaces */
+/* =========================================================
+   GLOBAL PAGE BACKGROUND
+   ========================================================= */
 
 html,
 body,
@@ -4197,67 +4215,26 @@ body,
 }
 
 
-/* Main application containers */
+/* =========================================================
+   MAIN APPLICATION AREAS
+   ========================================================= */
 
 .app-layout,
 .main-content,
 .tv-dashboard,
-.tv-main {
+.tv-main,
+.dashboard-page,
+.people-page,
+.documents-page,
+.verification-page {
   background: var(--tv-bg);
   color: var(--tv-text);
 }
 
 
-/* Common cards */
-
-.stat-card,
-.welcome-card,
-.activity-card,
-.people-preview,
-.people-page-card,
-.tv-stat-card,
-.tv-panel {
-  background: var(--tv-card);
-  border-color: var(--tv-border);
-}
-
-
-/* Common text */
-
-.stat-card strong,
-.stat-card span,
-.welcome-card h2,
-.activity-card h2,
-.people-preview h2,
-.people-toolbar h2,
-.tv-panel-header h2,
-.tv-stat-info strong,
-.tv-stat-info span,
-.tv-overview-row strong,
-.tv-overview-row span,
-.tv-person-details strong,
-.tv-person-details span,
-.tv-table-person strong,
-.tv-table-person span {
-  color: var(--tv-text);
-}
-
-
-/* Secondary text */
-
-.welcome-card p,
-.people-toolbar p,
-.section-heading > span,
-.empty-activity,
-.tv-panel-header p,
-.tv-overview-row span,
-.tv-person-details span,
-.tv-table-person span {
-  color: var(--tv-text-secondary);
-}
-
-
-/* Navigation */
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
 
 .sidebar {
   background: var(--tv-card);
@@ -4308,45 +4285,165 @@ body,
   color: var(--tv-text-secondary);
 }
 
+.logout-button:hover {
+  background: var(--tv-hover);
+}
 
-/* Tables */
+
+/* =========================================================
+   DASHBOARD CARDS
+   ========================================================= */
+
+.stat-card,
+.welcome-card,
+.activity-card,
+.people-preview,
+.people-page-card,
+.tv-stat-card,
+.tv-panel {
+  background: var(--tv-card);
+  border-color: var(--tv-border);
+  color: var(--tv-text);
+}
+
+
+/* =========================================================
+   DASHBOARD TEXT
+   ========================================================= */
+
+/* Main headings */
+
+.stat-card strong,
+.welcome-card h2,
+.activity-card h2,
+.people-preview h2,
+.people-toolbar h2,
+.tv-panel-header h2,
+.tv-stat-info strong,
+.tv-overview-row strong,
+.tv-person-details strong,
+.tv-table-person strong {
+  color: var(--tv-text);
+}
+
+
+/* Secondary information */
+
+.stat-card span,
+.welcome-card p,
+.people-toolbar p,
+.section-heading > span,
+.empty-activity,
+.tv-panel-header p,
+.tv-overview-row span,
+.tv-person-details span,
+.tv-table-person span,
+.tv-stat-info span {
+  color: var(--tv-text-secondary);
+}
+
+
+/* Muted information */
+
+.tv-text-muted,
+.text-muted,
+.muted {
+  color: var(--tv-text-muted);
+}
+
+
+/* =========================================================
+   TABLES
+   ========================================================= */
+
+.people-table-full,
+.tv-table {
+  background: var(--tv-card);
+  color: var(--tv-text);
+}
 
 .people-table-full th,
 .tv-table-head {
   background: var(--tv-table-header);
+  color: var(--tv-text-secondary);
   border-color: var(--tv-border);
 }
 
 .people-table-full td,
 .tv-table-row {
-  border-color: var(--tv-border-light);
+  background: var(--tv-card);
   color: var(--tv-text-secondary);
+  border-color: var(--tv-border-light);
 }
 
-.people-table-full tbody tr:hover {
+.people-table-full tbody tr:hover,
+.tv-table-row:hover {
   background: var(--tv-hover);
 }
 
 
-/* Inputs */
+/* =========================================================
+   TABLE PRIMARY TEXT
+   ========================================================= */
+
+.people-table-full td strong,
+.tv-table-row strong,
+.tv-table-person strong {
+  color: var(--tv-text);
+}
+
+
+/* =========================================================
+   SEARCH / INPUTS
+   ========================================================= */
 
 .people-search,
-.view-button {
+.view-button,
+input,
+select,
+textarea {
   background: var(--tv-input);
   border-color: var(--tv-border);
   color: var(--tv-text);
 }
 
 .people-search input {
+  background: transparent;
   color: var(--tv-text);
 }
 
-.people-search input::placeholder {
+.people-search input::placeholder,
+input::placeholder,
+textarea::placeholder {
   color: var(--tv-text-muted);
 }
 
 
-/* Dashboard separators */
+/* =========================================================
+   INPUT FOCUS
+   ========================================================= */
+
+input:focus,
+select:focus,
+textarea:focus,
+.people-search:focus-within {
+  border-color: #8c98a8;
+}
+
+
+/* =========================================================
+   SELECT DROPDOWN
+   ========================================================= */
+
+select option {
+  background: var(--tv-card);
+  color: var(--tv-text);
+}
+
+
+/* =========================================================
+   DASHBOARD SEPARATORS
+   ========================================================= */
 
 .tv-panel-header,
 .tv-overview-row,
@@ -4355,7 +4452,24 @@ body,
 }
 
 
-/* Mobile bottom navigation */
+/* =========================================================
+   COMMON PANELS / SECTIONS
+   ========================================================= */
+
+.card,
+.panel,
+.content-card,
+.page-card,
+.section-card {
+  background: var(--tv-card);
+  border-color: var(--tv-border);
+  color: var(--tv-text);
+}
+
+
+/* =========================================================
+   MOBILE BOTTOM NAVIGATION
+   ========================================================= */
 
 .mobile-bottom-nav {
   background: var(--tv-card);
@@ -4370,8 +4484,15 @@ body,
   background: var(--tv-hover);
 }
 
+.mobile-nav-item.active {
+  color: var(--tv-text);
+  background: var(--tv-hover);
+}
 
-/* Sidebar mobile controls */
+
+/* =========================================================
+   MOBILE / SIDEBAR CONTROLS
+   ========================================================= */
 
 .sidebar-toggle {
   background: var(--tv-card);
@@ -4381,4 +4502,292 @@ body,
 
 .sidebar-close:hover {
   background: var(--tv-hover);
+}
+
+
+/* =========================================================
+   ICON CONTAINERS
+   ========================================================= */
+
+.icon-container,
+.stat-icon,
+.tv-stat-icon {
+  background: var(--tv-icon-bg);
+}
+
+
+/* =========================================================
+   BUTTONS THAT USE WHITE BACKGROUNDS
+   ========================================================= */
+
+.view-button:hover {
+  background: var(--tv-hover);
+}
+
+
+/* =========================================================
+   DARK MODE — COMMON HARD-CODED WHITE SURFACES
+   ========================================================= */
+
+:root[data-theme="dark"] .card,
+:root[data-theme="dark"] .panel,
+:root[data-theme="dark"] .content-card,
+:root[data-theme="dark"] .page-card,
+:root[data-theme="dark"] .section-card,
+:root[data-theme="dark"] .stat-card,
+:root[data-theme="dark"] .welcome-card,
+:root[data-theme="dark"] .activity-card,
+:root[data-theme="dark"] .people-preview,
+:root[data-theme="dark"] .people-page-card,
+:root[data-theme="dark"] .tv-panel,
+:root[data-theme="dark"] .tv-stat-card {
+  background: var(--tv-card);
+  border-color: var(--tv-border);
+}
+
+
+/* =========================================================
+   DARK MODE — TEXT OVERRIDES
+   ========================================================= */
+
+:root[data-theme="dark"] h1,
+:root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3,
+:root[data-theme="dark"] h4,
+:root[data-theme="dark"] strong {
+  color: var(--tv-text);
+}
+
+
+/* Secondary text must stay softer */
+
+:root[data-theme="dark"] p,
+:root[data-theme="dark"] span {
+  color: inherit;
+}
+
+
+/* =========================================================
+   DARK MODE — BORDERS
+   ========================================================= */
+
+:root[data-theme="dark"] hr {
+  border-color: var(--tv-border-light);
+}
+
+
+/* =========================================================
+   DARK MODE — LINKS
+   ========================================================= */
+
+:root[data-theme="dark"] a {
+  color: inherit;
+}
+
+
+/* =========================================================
+   DARK MODE — SCROLLBARS
+   ========================================================= */
+
+:root[data-theme="dark"] ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+:root[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: var(--tv-bg);
+}
+
+:root[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: #46505d;
+  border-radius: 8px;
+}
+
+:root[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: #566170;
+}
+
+
+/* =========================================================
+   DARK MODE — DOCUMENT / PEOPLE DRAWERS
+   ========================================================= */
+
+:root[data-theme="dark"] .drawer,
+:root[data-theme="dark"] .modal,
+:root[data-theme="dark"] .modal-content,
+:root[data-theme="dark"] .detail-panel,
+:root[data-theme="dark"] .document-detail,
+:root[data-theme="dark"] .person-drawer {
+  background: var(--tv-card);
+  color: var(--tv-text);
+  border-color: var(--tv-border);
+}
+
+
+/* =========================================================
+   DARK MODE — TOOLBARS / FILTER AREAS
+   ========================================================= */
+
+:root[data-theme="dark"] .toolbar,
+:root[data-theme="dark"] .filter-bar,
+:root[data-theme="dark"] .search-bar {
+  background: var(--tv-card);
+  color: var(--tv-text);
+  border-color: var(--tv-border);
+}
+
+
+/* =========================================================
+   DARK MODE — EMPTY STATES
+   ========================================================= */
+
+:root[data-theme="dark"] .empty-state,
+:root[data-theme="dark"] .empty-activity {
+  color: var(--tv-text-secondary);
+}
+
+
+/* =========================================================
+   DARK MODE — FORM LABELS
+   ========================================================= */
+
+:root[data-theme="dark"] label {
+  color: var(--tv-text-secondary);
+}
+
+
+/* =========================================================
+   DARK MODE — DISABLED ELEMENTS
+   ========================================================= */
+
+:root[data-theme="dark"] input:disabled,
+:root[data-theme="dark"] select:disabled,
+:root[data-theme="dark"] button:disabled {
+  background: #272d35;
+  color: #7f8995;
+  border-color: #363e49;
+}
+
+/* =========================================================
+   TRUSTVISION LIGHT MODE VISIBILITY FIX
+   ========================================================= */
+
+/* Main page headings */
+html:not([data-theme="dark"]) h1,
+html:not([data-theme="dark"]) h2,
+html:not([data-theme="dark"]) h3,
+html:not([data-theme="dark"]) h4 {
+  color: #172033;
+}
+
+/* Dashboard headings */
+html:not([data-theme="dark"]) .dashboard-page h1,
+html:not([data-theme="dark"]) .dashboard-page h2,
+html:not([data-theme="dark"]) .dashboard-page h3,
+html:not([data-theme="dark"]) .tv-dashboard h1,
+html:not([data-theme="dark"]) .tv-dashboard h2,
+html:not([data-theme="dark"]) .tv-dashboard h3 {
+  color: #172033;
+}
+
+/* Verification headings */
+html:not([data-theme="dark"]) .verification-page h1,
+html:not([data-theme="dark"]) .verification-page h2,
+html:not([data-theme="dark"]) .verification-page h3,
+html:not([data-theme="dark"]) .verification-page strong {
+  color: #172033;
+}
+
+/* General card headings */
+html:not([data-theme="dark"]) .card h1,
+html:not([data-theme="dark"]) .card h2,
+html:not([data-theme="dark"]) .card h3,
+html:not([data-theme="dark"]) .card h4,
+html:not([data-theme="dark"]) .tv-panel h1,
+html:not([data-theme="dark"]) .tv-panel h2,
+html:not([data-theme="dark"]) .tv-panel h3 {
+  color: #172033;
+}
+
+/* Verification center */
+html:not([data-theme="dark"]) .verification-card,
+html:not([data-theme="dark"]) .verification-option {
+  color: #172033;
+}
+
+html:not([data-theme="dark"]) .verification-card h1,
+html:not([data-theme="dark"]) .verification-card h2,
+html:not([data-theme="dark"]) .verification-card h3,
+html:not([data-theme="dark"]) .verification-card h4,
+html:not([data-theme="dark"]) .verification-card strong {
+  color: #172033;
+}
+
+/* Bottom mobile navigation */
+html:not([data-theme="dark"]) .mobile-bottom-nav {
+  background: #ffffff;
+  border-color: #e1e7ef;
+}
+
+html:not([data-theme="dark"]) .mobile-nav-item {
+  color: #687386;
+}
+
+html:not([data-theme="dark"]) .mobile-nav-item svg {
+  color: #687386;
+}
+
+html:not([data-theme="dark"]) .mobile-nav-item.active {
+  background: #f1f4f8;
+  color: #172033;
+}
+
+html:not([data-theme="dark"]) .mobile-nav-item.active svg {
+  color: #172033;
+}
+
+/* Mobile navigation brand */
+html:not([data-theme="dark"]) .mobile-nav-brand {
+  color: #172033;
+}
+
+/* Normal paragraphs */
+html:not([data-theme="dark"]) p {
+  color: #687386;
+}
+
+/* Main descriptive text */
+html:not([data-theme="dark"]) .verification-page p,
+html:not([data-theme="dark"]) .dashboard-page p {
+  color: #687386;
+}
+
+
+/* =========================================================
+   TRUSTVISION DARK MODE VISIBILITY
+   ========================================================= */
+
+html[data-theme="dark"] h1,
+html[data-theme="dark"] h2,
+html[data-theme="dark"] h3,
+html[data-theme="dark"] h4 {
+  color: #f1f3f5;
+}
+
+html[data-theme="dark"] p {
+  color: #b8c0ca;
+}
+
+html[data-theme="dark"] .mobile-bottom-nav {
+  background: #292f38;
+  border-color: #3a424d;
+}
+
+html[data-theme="dark"] .mobile-nav-item {
+  color: #b8c0ca;
+}
+
+html[data-theme="dark"] .mobile-nav-item.active {
+  background: #323943;
+  color: #f1f3f5;
 }

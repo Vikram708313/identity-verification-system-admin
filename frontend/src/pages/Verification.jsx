@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import axios from "axios";
+import { Html5Qrcode } from "html5-qrcode";
+
 import {
   ScanFace,
   FileCheck,
@@ -15,39 +18,592 @@ import {
 } from "lucide-react";
 
 import Sidebar from "../components/Sidebar";
+import api from "../services/api";
 import "./Verification.css";
+
+const API_BASE_URL = "http://127.0.0.1:8000";
 
 export default function Verification() {
   const [step, setStep] = useState("face");
   const [faceVerified, setFaceVerified] = useState(false);
   const [method, setMethod] = useState(null);
 
-  const startFaceVerification = () => {
-    // Temporary simulation.
-    setFaceVerified(true);
+  const [personId, setPersonId] = useState(null);
+  const [selectedPerson, setSelectedPerson] = useState(null);
+
+  const [faceScore, setFaceScore] = useState(null);
+  const [documentResult, setDocumentResult] = useState(null);
+  const [qrResult, setQrResult] = useState(null);
+  const [analysisResult, setAnalysisResult] = useState(null);
+  const [decision, setDecision] = useState(null);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [documentFile, setDocumentFile] = useState(null);
+
+  const qrScannerRef = useRef(null);
+  const qrScanningRef = useRef(false);
+  const qrProcessingRef = useRef(false);
+
+  const faceVideoRef = useRef(null);
+  const faceStreamRef = useRef(null);
+
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("access_token");
+
+    return {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    };
   };
 
-  const continueAfterFace = () => {
-    setStep("method");
+ 
+  // =====================================================
+  // STEP 1 - FACE
+  // =====================================================
+
+  const startFaceVerification = async () => {
+
+    setError("");
+    setLoading(true);
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "user",
+        },
+        audio: false,
+      });
+
+      faceStreamRef.current = stream;
+
+      if (faceVideoRef.current) {
+        faceVideoRef.current.srcObject = stream;
+        await faceVideoRef.current.play();
+      }
+
+      setTimeout(async () => {
+        try {
+          if (!faceVideoRef.current) {
+            throw new Error("Camera is not available.");
+          }
+
+          const video = faceVideoRef.current;
+
+          const captureFrame = () =>
+            new Promise((resolve) => {
+              const canvas = document.createElement("canvas");
+
+              canvas.width = video.videoWidth;
+              canvas.height = video.videoHeight;
+
+              const context = canvas.getContext("2d");
+
+              context.drawImage(
+                video,
+                0,
+                0,
+                canvas.width,
+                canvas.height
+              );
+
+              canvas.toBlob(
+                resolve,
+                "image/jpeg",
+                0.9
+              );
+            });
+
+          const frames = [];
+
+          for (let i = 0; i < 5; i++) {
+            const frame = await captureFrame();
+
+            if (frame) {
+              frames.push(frame);
+            }
+
+            await new Promise((resolve) =>
+              setTimeout(resolve, 150)
+            );
+          }
+
+          if (frames.length < 3) {
+            throw new Error(
+              "Unable to capture enough camera frames."
+            );
+          }
+
+          const formData = new FormData();
+
+          formData.append(
+            "verification_image",
+            frames[frames.length - 1],
+            "live-face.jpeg"
+          );
+
+          frames.forEach((frame, index) => {
+            formData.append(
+              "liveness_frames",
+              frame,
+              `liveness-${index}.jpeg`
+            );
+          });
+
+          const response = await axios.post(
+            `${API_BASE_URL}/face/compare?person_id=${personId}`,
+            formData,
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem(
+                  "access_token"
+                )}`,
+              },
+            }
+          );
+
+          const score = response.data.match_score;
+
+          setFaceScore(score);
+          setFaceVerified(response.data.verified);
+
+          if (!response.data.verified) {
+            setError(
+              `Face verification failed. Match score: ${score}%`
+            );
+          }
+        } catch (err) {
+          handleApiError(err);
+        } finally {
+          if (faceStreamRef.current) {
+            faceStreamRef.current
+              .getTracks()
+              .forEach((track) => track.stop());
+
+            faceStreamRef.current = null;
+          }
+
+          setLoading(false);
+        }
+      }, 500);
+    } catch (err) {
+      console.error(err);
+
+      setLoading(false);
+
+      setError(
+        "Unable to access the camera. Please allow camera permission and try again."
+      );
+    }
   };
+
+  // =====================================================
+  // METHOD
+  // =====================================================
 
   const selectMethod = (selectedMethod) => {
+
     setMethod(selectedMethod);
+    setError("");
+    setDocumentResult(null);
+    setQrResult(null);
     setStep(selectedMethod);
   };
 
-  const completeVerification = () => {
+  // =====================================================
+  // DOCUMENT VERIFICATION
+  // =====================================================
+
+  const analyzeDocument = async () => {
+    if (!personId) {
+      setError("Please select a registered person first.");
+      return;
+    }
+
+    if (!documentFile) {
+      setError("Please select an identity document first.");
+      return;
+    }
+
+    setError("");
+    setLoading(true);
+
+    try {
+      const formData = new FormData();
+
+      formData.append("person_id", String(personId));
+      formData.append("document_type", "AADHAAR");
+      formData.append(
+        "document_number",
+        "DEMO-AADHAAR-001"
+      );
+      formData.append("file", documentFile);
+
+      const token = localStorage.getItem("access_token");
+
+      const response = await axios.post(
+  `${API_BASE_URL}/face/compare`,
+  formData,
+  {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+    },
+  }
+);
+
+const score = response.data.match_score;
+
+setFaceScore(score);
+setFaceVerified(response.data.verified);
+
+if (response.data.verified && response.data.person) {
+  setPersonId(response.data.person.id);
+  setSelectedPerson(response.data.person);
+} else {
+  setPersonId(null);
+  setSelectedPerson(null);
+  setError(
+    response.data.message ||
+      `No confident face match found. Score: ${score}%`
+  );
+}
+
+      setDocumentResult(response.data);
+
+      if (!response.data.verified) {
+        setError(
+          response.data.reason ||
+            "Document verification requires review."
+        );
+
+        if (response.data.status === "FAIL") {
+          setLoading(false);
+          return;
+        }
+      }
+
+      await runAIAnalysis(
+        "document",
+        response.data
+      );
+    } catch (err) {
+      handleApiError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // =====================================================
+  // QR VERIFICATION
+  // =====================================================
+
+  const analyzeQR = async (scannedToken) => {
+    if (!scannedToken || qrProcessingRef.current) {
+      return;
+    }
+
+    qrProcessingRef.current = true;
+
+    setError("");
+    setLoading(true);
+
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/qr/verify`,
+        {
+          token: scannedToken.trim(),
+        },
+        {
+          headers: getAuthHeaders(),
+        }
+      );
+
+      setQrResult(response.data);
+
+      if (!response.data.verified) {
+        setError(
+          response.data.reason ||
+            "QR verification failed."
+        );
+
+        return;
+      }
+
+      await runAIAnalysis("qr", response.data);
+    } catch (err) {
+      handleApiError(err);
+    } finally {
+      qrProcessingRef.current = false;
+      setLoading(false);
+    }
+  };
+
+  // =====================================================
+  // QR CAMERA SCANNER
+  // =====================================================
+
+  const stopQRScanner = async () => {
+    qrScanningRef.current = false;
+
+    if (!qrScannerRef.current) {
+      return;
+    }
+
+    try {
+      if (qrScannerRef.current.isScanning) {
+        await qrScannerRef.current.stop();
+      }
+    } catch (err) {
+      console.warn(
+        "QR scanner stop warning:",
+        err
+      );
+    }
+
+    try {
+      await qrScannerRef.current.clear();
+    } catch (err) {
+      console.warn(
+        "QR scanner clear warning:",
+        err
+      );
+    }
+
+    qrScannerRef.current = null;
+  };
+
+  const startQRScanner = async () => {
+    if (
+      qrScannerRef.current ||
+      qrScanningRef.current
+    ) {
+      return;
+    }
+
+    setError("");
+
+    try {
+      const scanner = new Html5Qrcode("qr-reader");
+
+      qrScannerRef.current = scanner;
+      qrScanningRef.current = true;
+
+      await scanner.start(
+        {
+          facingMode: "environment",
+        },
+        {
+          fps: 10,
+          qrbox: {
+            width: 250,
+            height: 250,
+          },
+        },
+        async (decodedText) => {
+          if (qrProcessingRef.current) {
+            return;
+          }
+
+          await stopQRScanner();
+
+          await analyzeQR(decodedText);
+        },
+        () => {
+          // Normal scanning frame failure.
+        }
+      );
+    } catch (err) {
+      console.error(
+        "QR scanner error:",
+        err
+      );
+
+      qrScanningRef.current = false;
+      qrScannerRef.current = null;
+
+      setError(
+        "Unable to access the camera. Please allow camera permission and try again."
+      );
+    }
+  };
+
+  useEffect(() => {
+    if (step === "qr") {
+      const timer = setTimeout(() => {
+        startQRScanner();
+      }, 300);
+
+      return () => {
+        clearTimeout(timer);
+        stopQRScanner();
+      };
+    }
+
+    stopQRScanner();
+
+    return undefined;
+  }, [step]);
+
+  // =====================================================
+  // AI ANALYSIS
+  // =====================================================
+
+  const runAIAnalysis = async (
+    verificationMethod,
+    secondaryResult
+  ) => {
+    const documentScore =
+      verificationMethod === "document"
+        ? secondaryResult?.document_match_score ??
+          null
+        : null;
+
+    const qrScore =
+      verificationMethod === "qr"
+        ? secondaryResult?.verification?.qr_valid
+          ? 100
+          : 0
+        : null;
+
+    const response = await axios.post(
+      `${API_BASE_URL}/verification/analyze`,
+      {
+        person_id: personId,
+        verification_method:
+          verificationMethod,
+        face_match_score:
+          faceScore ?? 97,
+        document_match_score:
+          documentScore,
+        qr_match_score: qrScore,
+        completeness_score: 100,
+        consistency_score:
+          verificationMethod === "document"
+            ? documentScore ?? 100
+            : qrScore ?? 100,
+      },
+      {
+        headers: getAuthHeaders(),
+      }
+    );
+
+    setAnalysisResult(response.data);
+    setDecision(null);
     setStep("result");
   };
 
-  const startNewVerification = () => {
+  // =====================================================
+  // FINAL ADMIN DECISION
+  // =====================================================
+
+  const submitDecision = async (
+    selectedDecision
+  ) => {
+    if (!analysisResult?.verification_id) {
+      setError(
+        "Verification record is missing. Please run the analysis again."
+      );
+      return;
+    }
+
+    setError("");
+    setLoading(true);
+
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/verification/${analysisResult.verification_id}/decision`,
+        {
+          decision: selectedDecision,
+        },
+        {
+          headers: getAuthHeaders(),
+        }
+      );
+
+      setDecision(response.data.decision);
+    } catch (err) {
+      handleApiError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // =====================================================
+  // API ERROR HANDLING
+  // =====================================================
+
+  const handleApiError = (err) => {
+    console.error(err);
+
+    if (err.response?.status === 401) {
+      setError(
+        "Your session has expired. Please log in again."
+      );
+      return;
+    }
+
+    if (err.response?.data?.detail) {
+      setError(err.response.data.detail);
+      return;
+    }
+
+    if (err.message) {
+      setError(err.message);
+      return;
+    }
+
+    setError(
+      "Something went wrong during verification."
+    );
+  };
+
+  // =====================================================
+  // RESET
+  // =====================================================
+
+  const startNewVerification = async () => {
+    await stopQRScanner();
+
+    if (faceStreamRef.current) {
+      faceStreamRef.current
+        .getTracks()
+        .forEach((track) => track.stop());
+
+      faceStreamRef.current = null;
+    }
+
     setStep("face");
     setFaceVerified(false);
     setMethod(null);
+
+    setPersonId(null);
+    setSelectedPerson(null);
+
+    setFaceScore(null);
+    setDocumentResult(null);
+    setDocumentFile(null);
+    setQrResult(null);
+    setAnalysisResult(null);
+    setDecision(null);
+
+    setError("");
+    setLoading(false);
+
+    qrProcessingRef.current = false;
   };
 
-  const goBack = () => {
-    if (step === "document" || step === "qr") {
+  // =====================================================
+  // BACK
+  // =====================================================
+
+  const goBack = async () => {
+    setError("");
+
+    if (
+      step === "document" ||
+      step === "qr"
+    ) {
+      await stopQRScanner();
       setStep("method");
       return;
     }
@@ -57,6 +613,18 @@ export default function Verification() {
     }
   };
 
+  const continueAfterFace = () => {
+    if (!personId) {
+      setError(
+        "Please select a registered person first."
+      );
+      return;
+    }
+
+    setError("");
+    setStep("method");
+  };
+
   return (
     <div className="verification-app">
       <Sidebar />
@@ -64,28 +632,56 @@ export default function Verification() {
       <main className="verification-main">
 
         {/* HEADER */}
+
         <header className="verification-header">
           <div>
             <div className="ai-page-title">
               <Sparkles size={20} />
-              <span>AI-POWERED VERIFICATION</span>
+              <span>
+                AI-POWERED VERIFICATION
+              </span>
             </div>
 
             <h1>Verify with AI</h1>
 
             <p>
-              Verify an identity and receive an AI-assisted
-              risk assessment with the reasons behind the result.
+              Verify an identity and receive an
+              AI-assisted risk assessment with the
+              reasons behind the result.
             </p>
           </div>
 
           <div className="verification-security">
             <ShieldCheck size={18} />
-            <span>Secure Verification</span>
+            <span>
+              Secure Verification
+            </span>
           </div>
         </header>
 
+        {/* ERROR */}
+
+        {error && (
+          <div
+            style={{
+              marginBottom: "18px",
+              padding: "14px 16px",
+              borderRadius: "12px",
+              border: "1px solid #fca5a5",
+              background: "#fef2f2",
+              color: "#991b1b",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+            }}
+          >
+            <CircleAlert size={18} />
+            <span>{error}</span>
+          </div>
+        )}
+
         {/* STEPS */}
+
         <div className="verification-steps">
 
           <StepIndicator
@@ -117,19 +713,36 @@ export default function Verification() {
 
         </div>
 
-        {/* FACE VERIFICATION */}
+        {/* ================================================= */}
+        {/* FACE */}
+        {/* ================================================= */}
+
         {step === "face" && (
           <section className="verification-card">
 
+            <div
+              style={{
+                marginBottom: "24px",
+              }}
+            >
+              
+              
+            </div>
+
             <div className="verification-card-header">
               <div>
-                <p className="card-eyebrow">STEP 1</p>
+                <p className="card-eyebrow">
+                  STEP 1
+                </p>
 
-                <h2>Face Verification</h2>
+                <h2>
+                  Face Verification
+                </h2>
 
                 <p>
-                  Verify the person's face before continuing
-                  with document or QR verification.
+                  Verify the person's face before
+                  continuing with document or QR
+                  verification.
                 </p>
               </div>
 
@@ -142,14 +755,24 @@ export default function Verification() {
               <div className="camera-area">
 
                 <div className="face-camera-frame">
+                  <video
+                    ref={faceVideoRef}
+                    className="face-camera-video"
+                    autoPlay
+                    muted
+                    playsInline
+                    width="640"
+                    height="480"
+                  />
 
                   <div className="face-corner top-left" />
                   <div className="face-corner top-right" />
                   <div className="face-corner bottom-left" />
                   <div className="face-corner bottom-right" />
 
-                  <ScanFace size={58} />
-
+                  {!faceVideoRef.current?.srcObject && (
+                    <ScanFace size={58} />
+                  )}
                 </div>
 
                 <strong>
@@ -157,15 +780,23 @@ export default function Verification() {
                 </strong>
 
                 <span>
-                  Make sure the person's face is clearly visible.
+                  Make sure the person's face is clearly
+                  visible.
                 </span>
 
                 <button
                   className="primary-verification-button"
-                  onClick={startFaceVerification}
+                  onClick={
+                    startFaceVerification
+                  }
+                  disabled={loading}
+                  
                 >
                   <ScanFace size={18} />
-                  Start Face Verification
+
+                  {loading
+                    ? "Verifying..."
+                    : "Start Face Verification"}
                 </button>
 
               </div>
@@ -178,33 +809,55 @@ export default function Verification() {
                   <CheckCircle2 size={38} />
                 </div>
 
-                <h3>Face Verification Successful</h3>
+                <h3>
+                  Face Verification Successful
+                </h3>
 
                 <p>
-                  The person's face has been successfully matched.
+                  The person's face has been successfully
+                  matched.
                 </p>
 
                 <div className="face-person-card">
 
                   <div className="face-person-avatar">
-                    A
+                    {getPersonInitial(
+                      selectedPerson
+                    )}
                   </div>
 
                   <div>
-                    <strong>Sample Identity</strong>
-                    <span>User ID #001</span>
+                    <strong>
+                      {selectedPerson?.full_name ||
+                        "Unknown Person"}
+                    </strong>
+
+                    <span>
+                      User ID #
+                      {selectedPerson?.id ||
+                        "-"}{" "}
+                      · Face match{" "}
+                      {faceScore}%
+                    </span>
                   </div>
 
                   <div className="face-match-score">
-                    <strong>97%</strong>
-                    <span>Face Match</span>
+                    <strong>
+                      {faceScore}%
+                    </strong>
+
+                    <span>
+                      Face Match
+                    </span>
                   </div>
 
                 </div>
 
                 <button
                   className="primary-verification-button"
-                  onClick={continueAfterFace}
+                  onClick={
+                    continueAfterFace
+                  }
                 >
                   Continue
                   <ChevronRight size={18} />
@@ -216,26 +869,40 @@ export default function Verification() {
           </section>
         )}
 
+        {/* ================================================= */}
         {/* METHOD */}
+        {/* ================================================= */}
+
         {step === "method" && (
           <section className="verification-card">
 
-            <BackButton onClick={goBack} />
+            <BackButton
+              onClick={goBack}
+            />
 
             <div className="verification-success-strip">
               <CheckCircle2 size={19} />
 
               <div>
-                <strong>Face verification completed</strong>
+                <strong>
+                  Face verification completed
+                </strong>
+
                 <span>
-                  User ID #001 · Face match 97%
+                  User ID #
+                  {selectedPerson?.id ||
+                    "-"}{" "}
+                  · Face match{" "}
+                  {faceScore}%
                 </span>
               </div>
             </div>
 
             <div className="method-heading">
 
-              <p className="card-eyebrow">STEP 2</p>
+              <p className="card-eyebrow">
+                STEP 2
+              </p>
 
               <h2>
                 Choose Verification Method
@@ -252,7 +919,11 @@ export default function Verification() {
 
               <button
                 className="verification-method-card"
-                onClick={() => selectMethod("document")}
+                onClick={() =>
+                  selectMethod(
+                    "document"
+                  )
+                }
               >
                 <div className="method-icon">
                   <FileCheck size={28} />
@@ -264,7 +935,8 @@ export default function Verification() {
                   </strong>
 
                   <span>
-                    Upload or scan an identity document.
+                    Upload or scan an identity
+                    document.
                   </span>
                 </div>
 
@@ -273,7 +945,9 @@ export default function Verification() {
 
               <button
                 className="verification-method-card"
-                onClick={() => selectMethod("qr")}
+                onClick={() =>
+                  selectMethod("qr")
+                }
               >
                 <div className="method-icon">
                   <QrCode size={28} />
@@ -297,11 +971,16 @@ export default function Verification() {
           </section>
         )}
 
+        {/* ================================================= */}
         {/* DOCUMENT */}
+        {/* ================================================= */}
+
         {step === "document" && (
           <section className="verification-card">
 
-            <BackButton onClick={goBack} />
+            <BackButton
+              onClick={goBack}
+            />
 
             <div className="verification-card-header">
 
@@ -310,11 +989,13 @@ export default function Verification() {
                   STEP 2 · DOCUMENT
                 </p>
 
-                <h2>Document Verification</h2>
+                <h2>
+                  Document Verification
+                </h2>
 
                 <p>
-                  Upload the identity document belonging
-                  to the face-verified person.
+                  Upload the identity document to verify it
+                  against the registered identity.
                 </p>
               </div>
 
@@ -324,7 +1005,10 @@ export default function Verification() {
 
             </div>
 
-            <VerifiedPerson />
+            <VerifiedPerson
+              faceScore={faceScore}
+              selectedPerson={selectedPerson}
+            />
 
             <div className="document-upload-area">
 
@@ -333,20 +1017,50 @@ export default function Verification() {
               </div>
 
               <strong>
-                Upload Identity Document
+                Select Identity Document
               </strong>
 
               <span>
-                Select an Aadhaar, PAN, Passport or
-                Driving Licence document.
+                Upload the registered Aadhaar document
+                as PDF, JPG, JPEG, or PNG.
               </span>
+
+              <input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={(event) => {
+                  const file =
+                    event.target.files?.[0] ||
+                    null;
+
+                  setDocumentFile(file);
+                  setError("");
+                }}
+              />
+
+              {documentFile && (
+                <span>
+                  Selected:{" "}
+                  {documentFile.name}
+                </span>
+              )}
 
               <button
                 className="secondary-verification-button"
-                onClick={completeVerification}
+                onClick={
+                  analyzeDocument
+                }
+                disabled={
+                  loading ||
+                  !documentFile ||
+                  !personId
+                }
               >
-                <Upload size={17} />
-                Analyze Document
+                <FileCheck size={17} />
+
+                {loading
+                  ? "Verifying..."
+                  : "Verify Document"}
               </button>
 
             </div>
@@ -356,9 +1070,9 @@ export default function Verification() {
               <Sparkles size={17} />
 
               <span>
-                After document verification, AI will analyze
-                the available verification signals and explain
-                the factors contributing to the risk assessment.
+                The uploaded document is hashed and
+                compared with the registered document
+                before risk analysis.
               </span>
 
             </div>
@@ -366,11 +1080,16 @@ export default function Verification() {
           </section>
         )}
 
+        {/* ================================================= */}
         {/* QR */}
+        {/* ================================================= */}
+
         {step === "qr" && (
           <section className="verification-card">
 
-            <BackButton onClick={goBack} />
+            <BackButton
+              onClick={goBack}
+            />
 
             <div className="verification-card-header">
 
@@ -379,7 +1098,9 @@ export default function Verification() {
                   STEP 2 · QR
                 </p>
 
-                <h2>QR Verification</h2>
+                <h2>
+                  QR Verification
+                </h2>
 
                 <p>
                   Scan the QR code belonging to the
@@ -393,20 +1114,21 @@ export default function Verification() {
 
             </div>
 
-            <VerifiedPerson />
+            <VerifiedPerson
+              faceScore={faceScore}
+              selectedPerson={selectedPerson}
+            />
 
             <div className="qr-scanner-area">
 
-              <div className="qr-frame">
-
-                <div className="qr-corner qr-top-left" />
-                <div className="qr-corner qr-top-right" />
-                <div className="qr-corner qr-bottom-left" />
-                <div className="qr-corner qr-bottom-right" />
-
-                <QrCode size={70} />
-
-              </div>
+              <div
+                id="qr-reader"
+                style={{
+                  width: "100%",
+                  maxWidth: "500px",
+                  margin: "0 auto",
+                }}
+              />
 
               <strong>
                 Position QR code inside the frame
@@ -416,13 +1138,15 @@ export default function Verification() {
                 Make sure the QR code is clearly visible.
               </span>
 
-              <button
-                className="primary-verification-button"
-                onClick={completeVerification}
-              >
-                <QrCode size={18} />
-                Analyze QR Code
-              </button>
+              {loading && (
+                <div
+                  style={{
+                    marginTop: "12px",
+                  }}
+                >
+                  Verifying QR code...
+                </div>
+              )}
 
             </div>
 
@@ -431,8 +1155,9 @@ export default function Verification() {
               <Sparkles size={17} />
 
               <span>
-                AI will evaluate the verification signals
-                after the QR code is analyzed.
+                The QR token will be checked against the
+                registered identity and then passed to the
+                risk analysis engine.
               </span>
 
             </div>
@@ -440,11 +1165,22 @@ export default function Verification() {
           </section>
         )}
 
-        {/* AI RESULT */}
+        {/* ================================================= */}
+        {/* RESULT */}
+        {/* ================================================= */}
+
         {step === "result" && (
           <AIResult
             method={method}
-            onNewVerification={startNewVerification}
+            result={analysisResult}
+            documentResult={documentResult}
+            qrResult={qrResult}
+            decision={decision}
+            loading={loading}
+            onDecision={submitDecision}
+            onNewVerification={
+              startNewVerification
+            }
           />
         )}
 
@@ -454,9 +1190,9 @@ export default function Verification() {
 }
 
 
-/* -------------------------------- */
+/* ===================================================== */
 /* STEP INDICATOR */
-/* -------------------------------- */
+/* ===================================================== */
 
 function StepIndicator({
   number,
@@ -468,16 +1204,16 @@ function StepIndicator({
     <div
       className={`verification-step ${
         active ? "active" : ""
-      } ${completed ? "completed" : ""}`}
+      } ${
+        completed ? "completed" : ""
+      }`}
     >
       <div className="step-number">
-
         {completed ? (
           <CheckCircle2 size={16} />
         ) : (
           number
         )}
-
       </div>
 
       <span>{title}</span>
@@ -486,9 +1222,9 @@ function StepIndicator({
 }
 
 
-/* -------------------------------- */
+/* ===================================================== */
 /* BACK BUTTON */
-/* -------------------------------- */
+/* ===================================================== */
 
 function BackButton({ onClick }) {
   return (
@@ -503,27 +1239,55 @@ function BackButton({ onClick }) {
 }
 
 
-/* -------------------------------- */
-/* VERIFIED PERSON */
-/* -------------------------------- */
+/* ===================================================== */
+/* PERSON INITIAL */
+/* ===================================================== */
 
-function VerifiedPerson() {
+function getPersonInitial(person) {
+  if (!person?.full_name) {
+    return "?";
+  }
+
+  return person.full_name
+    .trim()
+    .charAt(0)
+    .toUpperCase();
+}
+
+
+/* ===================================================== */
+/* VERIFIED PERSON */
+/* ===================================================== */
+
+function VerifiedPerson({
+  faceScore,
+  selectedPerson,
+}) {
   return (
     <div className="verified-person">
 
       <div className="verified-person-avatar">
-        A
+        {getPersonInitial(
+          selectedPerson
+        )}
       </div>
 
       <div>
-        <span>Face verified person</span>
+        <span>
+          Face verified person
+        </span>
 
         <strong>
-          Sample Identity
+          {selectedPerson?.full_name ||
+            "Unknown Person"}
         </strong>
 
         <small>
-          User ID #001 · Face match 97%
+          User ID #
+          {selectedPerson?.id ||
+            "-"}{" "}
+          · Face match{" "}
+          {faceScore}%
         </small>
       </div>
 
@@ -534,28 +1298,46 @@ function VerifiedPerson() {
 }
 
 
-/* -------------------------------- */
+/* ===================================================== */
 /* AI RESULT */
-/* -------------------------------- */
+/* ===================================================== */
 
 function AIResult({
   method,
+  result,
+  documentResult,
+  qrResult,
+  decision,
+  loading,
+  onDecision,
   onNewVerification,
 }) {
-
-  /*
-   * Temporary demonstration values.
-   * Later these will come from the FastAPI backend.
-   */
-
-  const riskScore = 22;
+  const riskScore =
+    result?.risk?.score ?? 0;
 
   const riskLevel =
-    riskScore < 30
+    result?.risk?.level ?? "UNKNOWN";
+
+  const riskLabel =
+    riskLevel === "LOW"
       ? "Low Risk"
-      : riskScore < 60
+      : riskLevel === "MEDIUM"
       ? "Medium Risk"
-      : "High Risk";
+      : riskLevel === "HIGH"
+      ? "High Risk"
+      : "Unknown";
+
+  const signals =
+    result?.signals ?? {};
+
+  const reasons =
+    result?.reasons ?? [];
+
+  const documentScore =
+    signals.document_match_score;
+
+  const qrScore =
+    signals.qr_match_score;
 
   return (
     <section className="ai-result-page">
@@ -580,8 +1362,8 @@ function AIResult({
             </h2>
 
             <p>
-              AI has analyzed the available verification
-              signals and identified the following factors.
+              The backend analyzed the available
+              verification signals.
             </p>
           </div>
 
@@ -604,7 +1386,9 @@ function AIResult({
           <div className="risk-score-top">
 
             <div>
-              <span>Overall Risk</span>
+              <span>
+                Overall Risk
+              </span>
 
               <strong>
                 {riskScore}%
@@ -635,7 +1419,7 @@ function AIResult({
             </span>
 
             <strong>
-              {riskLevel}
+              {riskLabel}
             </strong>
 
             <span>
@@ -652,7 +1436,9 @@ function AIResult({
         <div className="ai-identity-card">
 
           <div className="result-avatar">
-            A
+            {getPersonInitial(
+              result?.person
+            )}
           </div>
 
           <div>
@@ -662,18 +1448,21 @@ function AIResult({
             </span>
 
             <strong>
-              Sample Identity
+              {result?.person?.full_name ||
+                "Unknown"}
             </strong>
 
             <small>
-              User ID #001
+              User ID #
+              {result?.person?.id ??
+                "-"}
             </small>
 
           </div>
 
           <div className="approved-badge">
             <CheckCircle2 size={14} />
-            Verified
+            Matched
           </div>
 
         </div>
@@ -692,10 +1481,13 @@ function AIResult({
           </div>
 
           <div>
-            <p>AI ASSISTANT</p>
+            <p>
+              AI ASSISTANT
+            </p>
 
             <h3>
-              Why is the risk {riskScore}%?
+              Why is the risk{" "}
+              {riskScore}%?
             </h3>
           </div>
 
@@ -703,18 +1495,20 @@ function AIResult({
 
         <div className="ai-explanation-text">
 
-          <p>
-            The available identity signals show a generally
-            consistent identity. The face match is strong and
-            the submitted documents provide supporting evidence.
-          </p>
-
-          <p>
-            The risk level has increased slightly because one
-            expected document is not available and the PAN
-            document match is lower than the face and Aadhaar
-            matches.
-          </p>
+          {reasons.length > 0 ? (
+            reasons.map(
+              (reason, index) => (
+                <p key={index}>
+                  {reason}
+                </p>
+              )
+            )
+          ) : (
+            <p>
+              No additional risk factors were returned
+              by the verification engine.
+            </p>
+          )}
 
         </div>
 
@@ -728,7 +1522,10 @@ function AIResult({
         <div className="ai-section-title">
 
           <div>
-            <p>VERIFICATION SIGNALS</p>
+            <p>
+              VERIFICATION SIGNALS
+            </p>
+
             <h3>
               Factors considered by AI
             </h3>
@@ -746,43 +1543,144 @@ function AIResult({
         <div className="ai-signal-list">
 
           <AISignal
-            icon={<ScanFace size={19} />}
+            icon={
+              <ScanFace size={19} />
+            }
             name="Face Match"
-            value="97%"
-            status="Strong match"
-            type="positive"
+            value={
+              signals.face_match_score != null
+                ? `${signals.face_match_score}%`
+                : "N/A"
+            }
+            status={
+              signals.face_match_score >= 85
+                ? "Strong match"
+                : "Review required"
+            }
+            type={
+              signals.face_match_score >= 85
+                ? "positive"
+                : "warning"
+            }
           />
 
-          <AISignal
-            icon={<FileCheck size={19} />}
-            name="Aadhaar Match"
-            value="96%"
-            status="Strong match"
-            type="positive"
-          />
+
+          {method === "document" && (
+            <AISignal
+              icon={
+                <FileCheck size={19} />
+              }
+              name="Document Match"
+              value={
+                documentScore != null
+                  ? `${documentScore}%`
+                  : "N/A"
+              }
+              status={
+                documentScore >= 85
+                  ? "Strong match"
+                  : documentScore >= 60
+                  ? "Review required"
+                  : "Mismatch"
+              }
+              type={
+                documentScore >= 85
+                  ? "positive"
+                  : "warning"
+              }
+            />
+          )}
+
+
+          {method === "qr" && (
+            <AISignal
+              icon={
+                <QrCode size={19} />
+              }
+              name="QR Match"
+              value={
+                qrScore != null
+                  ? `${qrScore}%`
+                  : "N/A"
+              }
+              status={
+                qrResult?.verified
+                  ? "Valid QR"
+                  : "Invalid QR"
+              }
+              type={
+                qrResult?.verified
+                  ? "positive"
+                  : "warning"
+              }
+            />
+          )}
+
 
           <AISignal
-            icon={<FileCheck size={19} />}
-            name="PAN Match"
-            value="91%"
-            status="Moderate match"
-            type="warning"
-          />
-
-          <AISignal
-            icon={<FileCheck size={19} />}
-            name="Driving Licence"
-            value="Missing"
-            status="Not uploaded"
-            type="warning"
-          />
-
-          <AISignal
-            icon={<ShieldCheck size={19} />}
+            icon={
+              <ShieldCheck size={19} />
+            }
             name="Identity Database"
-            value="Matched"
-            status="Person found in database"
+            value={
+              signals.registered_document_count >
+              0
+                ? "Matched"
+                : "Found"
+            }
+            status={
+              signals.registered_document_count >
+              0
+                ? "Registered evidence found"
+                : "Person found in database"
+            }
             type="positive"
+          />
+
+
+          <AISignal
+            icon={
+              <ShieldCheck size={19} />
+            }
+            name="Completeness"
+            value={
+              signals.completeness_score != null
+                ? `${signals.completeness_score}%`
+                : "N/A"
+            }
+            status={
+              signals.completeness_score >= 90
+                ? "Complete identity"
+                : "Incomplete record"
+            }
+            type={
+              signals.completeness_score >= 90
+                ? "positive"
+                : "warning"
+            }
+          />
+
+
+          <AISignal
+            icon={
+              <ShieldCheck size={19} />
+            }
+            name="Consistency"
+            value={
+              signals.consistency_score != null
+                ? `${signals.consistency_score}%`
+                : "N/A"
+            }
+            status={
+              signals.consistency_score >= 90
+                ? "Consistent"
+                : "Review required"
+            }
+            type={
+              signals.consistency_score >= 90
+                ? "positive"
+                : "warning"
+            }
           />
 
         </div>
@@ -801,7 +1699,9 @@ function AIResult({
           </div>
 
           <div>
-            <p>RISK FACTORS</p>
+            <p>
+              RISK FACTORS
+            </p>
 
             <h3>
               Causes contributing to the risk
@@ -813,30 +1713,33 @@ function AIResult({
 
         <div className="risk-cause-list">
 
-          <RiskCause
-            number="01"
-            title="Missing document"
-            description="Driving Licence is not available in the registered document records."
-          />
-
-          <RiskCause
-            number="02"
-            title="Lower PAN match"
-            description="The PAN verification score is lower than the face and Aadhaar match scores."
-          />
-
-          <RiskCause
-            number="03"
-            title="Additional verification required"
-            description="The system recommends reviewing the available identity evidence before final approval."
-          />
+          {reasons.length > 0 ? (
+            reasons.map(
+              (reason, index) => (
+                <RiskCause
+                  key={index}
+                  number={String(
+                    index + 1
+                  ).padStart(2, "0")}
+                  title="Verification signal"
+                  description={reason}
+                />
+              )
+            )
+          ) : (
+            <RiskCause
+              number="01"
+              title="No significant risk factor"
+              description="The configured prototype thresholds did not identify an additional risk factor."
+            />
+          )}
 
         </div>
 
       </div>
 
 
-      {/* ADMIN RECOMMENDATION */}
+      {/* ADMIN DECISION */}
 
       <div className="ai-review-card">
 
@@ -847,29 +1750,95 @@ function AIResult({
         <div>
 
           <p>
-            ADMIN REVIEW
+            ADMIN DECISION
           </p>
 
           <strong>
-            Review the available identity documents
+            Human review is required for the final decision
           </strong>
 
           <span>
-            The current risk score is based on the available
-            verification signals. The admin should review the
-            underlying records before making a final decision.
+            The risk engine provides an assessment only.
+            The administrator makes the final verification
+            decision.
           </span>
+
+          {decision && (
+            <strong
+              style={{
+                marginTop: "10px",
+                display: "block",
+              }}
+            >
+              Decision recorded:{" "}
+              {decision}
+            </strong>
+          )}
 
         </div>
 
       </div>
 
 
-      {/* ACTION */}
+      {/* DECISION BUTTONS */}
+
+      {!decision && (
+        <div
+          style={{
+            display: "flex",
+            gap: "12px",
+            flexWrap: "wrap",
+            marginTop: "20px",
+          }}
+        >
+
+          <button
+            className="primary-verification-button"
+            onClick={() =>
+              onDecision("APPROVE")
+            }
+            disabled={loading}
+          >
+            <CheckCircle2 size={17} />
+
+            {loading
+              ? "Saving..."
+              : "Approve"}
+          </button>
+
+          <button
+            className="secondary-verification-button"
+            onClick={() =>
+              onDecision("REVIEW")
+            }
+            disabled={loading}
+          >
+            <CircleAlert size={17} />
+            Send to Review
+          </button>
+
+          <button
+            className="secondary-verification-button"
+            onClick={() =>
+              onDecision("REJECT")
+            }
+            disabled={loading}
+          >
+            <AlertTriangle size={17} />
+            Reject
+          </button>
+
+        </div>
+      )}
+
+
+      {/* NEW VERIFICATION */}
 
       <button
         className="new-verification-button"
-        onClick={onNewVerification}
+        onClick={
+          onNewVerification
+        }
       >
         <RotateCcw size={17} />
         Start New AI Verification
@@ -880,9 +1849,9 @@ function AIResult({
 }
 
 
-/* -------------------------------- */
+/* ===================================================== */
 /* AI SIGNAL */
-/* -------------------------------- */
+/* ===================================================== */
 
 function AISignal({
   icon,
@@ -921,9 +1890,9 @@ function AISignal({
 }
 
 
-/* -------------------------------- */
+/* ===================================================== */
 /* RISK CAUSE */
-/* -------------------------------- */
+/* ===================================================== */
 
 function RiskCause({
   number,

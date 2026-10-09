@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Login from "./pages/Login";
@@ -12,28 +11,6 @@ import ProtectedRoute from "./components/ProtectedRoute";
 
 
 function App() {
-  useEffect(() => {
-    const appearance =
-      localStorage.getItem("appearance") || "light";
-
-    const root = document.documentElement;
-
-    if (appearance === "dark") {
-      root.setAttribute("data-theme", "dark");
-    } else if (appearance === "system") {
-      const prefersDark = window.matchMedia(
-        "(prefers-color-scheme: dark)"
-      ).matches;
-
-      root.setAttribute(
-        "data-theme",
-        prefersDark ? "dark" : "light"
-      );
-    } else {
-      root.setAttribute("data-theme", "light");
-    }
-  }, []);
-
   return (
     <BrowserRouter>
       <Routes>

@@ -9,6 +9,7 @@ import {
   FileCheck,
   ScanFace,
   ArrowRight,
+  Mail,
 } from "lucide-react";
 
 import api from "../services/api";
@@ -17,17 +18,40 @@ import "./Login.css";
 export default function Login() {
   const navigate = useNavigate();
 
+  const [loginMethod, setLoginMethod] = useState("password");
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+
+  const [otpRequested, setOtpRequested] = useState(false);
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
-  const handleLogin = async (event) => {
+  const saveLoginSession = (response) => {
+    localStorage.setItem(
+      "access_token",
+      response.data.access_token
+    );
+
+    localStorage.setItem(
+      "role",
+      response.data.role
+    );
+
+    navigate("/dashboard");
+  };
+
+  const handlePasswordLogin = async (event) => {
     event.preventDefault();
 
     setError("");
+    setMessage("");
     setLoading(true);
 
     try {
@@ -36,23 +60,18 @@ export default function Login() {
       formData.append("username", username);
       formData.append("password", password);
 
-      const response = await api.post("/auth/login", formData, {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      });
-
-      localStorage.setItem(
-        "access_token",
-        response.data.access_token
+      const response = await api.post(
+        "/auth/login",
+        formData,
+        {
+          headers: {
+            "Content-Type":
+              "application/x-www-form-urlencoded",
+          },
+        }
       );
 
-      localStorage.setItem(
-        "role",
-        response.data.role
-      );
-
-      navigate("/dashboard");
+      saveLoginSession(response);
     } catch (err) {
       console.error("Login failed:", err);
 
@@ -65,10 +84,94 @@ export default function Login() {
     }
   };
 
+  const handleRequestOTP = async () => {
+    setError("");
+    setMessage("");
+
+    if (!email.trim()) {
+      setError("Please enter your email address.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await api.post(
+        "/auth/request-email-otp",
+        {
+          email: email.trim(),
+        }
+      );
+
+      setOtpRequested(true);
+
+      setMessage(
+        "OTP generated. Check the administrator email."
+      );
+    } catch (err) {
+      console.error(
+        "OTP request failed:",
+        err
+      );
+
+      setError(
+        err.response?.data?.detail ||
+          "Unable to request OTP."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (event) => {
+    event.preventDefault();
+
+    setError("");
+    setMessage("");
+
+    if (!otp.trim()) {
+      setError("Please enter the OTP.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await api.post(
+        "/auth/verify-email-otp",
+        {
+          email: email.trim(),
+          otp: otp.trim(),
+        }
+      );
+
+      saveLoginSession(response);
+    } catch (err) {
+      console.error(
+        "OTP verification failed:",
+        err
+      );
+
+      setError(
+        err.response?.data?.detail ||
+          "Invalid or expired OTP."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const switchLoginMethod = (method) => {
+    setLoginMethod(method);
+    setError("");
+    setMessage("");
+    setOtp("");
+    setOtpRequested(false);
+  };
+
   return (
     <main className="trust-login">
 
-      {/* Subtle logo watermark */}
       <img
         className="trust-watermark"
         src="/trustvision-logo.png"
@@ -76,15 +179,10 @@ export default function Login() {
         aria-hidden="true"
       />
 
-      {/* =====================================================
-          LEFT SIDE
-          ===================================================== */}
-
       <section className="trust-left">
 
         <div className="trust-left-content">
 
-          {/* ACTUAL LOGO FROM PUBLIC FOLDER */}
           <img
             className="trust-main-logo"
             src="/trustvision-logo.png"
@@ -115,8 +213,6 @@ export default function Login() {
             identities and fraudulent documents.
           </p>
 
-          {/* Feature list */}
-
           <div className="trust-features">
 
             <div className="trust-feature">
@@ -125,8 +221,12 @@ export default function Login() {
               </div>
 
               <div>
-                <strong>Secure Authentication</strong>
-                <span>JWT protected access</span>
+                <strong>
+                  Secure Authentication
+                </strong>
+                <span>
+                  JWT protected access
+                </span>
               </div>
             </div>
 
@@ -136,8 +236,12 @@ export default function Login() {
               </div>
 
               <div>
-                <strong>Document Verification</strong>
-                <span>Validate identity documents</span>
+                <strong>
+                  Document Verification
+                </strong>
+                <span>
+                  Validate identity documents
+                </span>
               </div>
             </div>
 
@@ -147,8 +251,12 @@ export default function Login() {
               </div>
 
               <div>
-                <strong>Face Verification</strong>
-                <span>Secure biometric matching</span>
+                <strong>
+                  Face Verification
+                </strong>
+                <span>
+                  Secure biometric matching
+                </span>
               </div>
             </div>
 
@@ -156,12 +264,12 @@ export default function Login() {
 
           <div className="trust-environment">
             <ShieldCheck size={18} />
-            <span>Local demonstration environment</span>
+            <span>
+              Local demonstration environment
+            </span>
           </div>
 
         </div>
-
-        {/* Decorative blue area */}
 
         <div className="trust-blue-shape">
           <div className="trust-glow-circle" />
@@ -170,16 +278,9 @@ export default function Login() {
 
       </section>
 
-
-      {/* =====================================================
-          RIGHT SIDE
-          ===================================================== */}
-
       <section className="trust-right">
 
         <div className="trust-card">
-
-          {/* Logo inside login card */}
 
           <img
             className="trust-card-logo"
@@ -188,148 +289,349 @@ export default function Login() {
           />
 
           <div className="trust-card-heading">
-            <h2>Welcome back</h2>
+
+            <h2>
+              Welcome back
+            </h2>
 
             <p>
               Sign in to your administrator account
             </p>
+
           </div>
 
+          {/* LOGIN METHOD */}
 
-          {/* LOGIN FORM */}
+          <div className="trust-login-methods">
 
-          <form
-            className="trust-form"
-            onSubmit={handleLogin}
-          >
+            <button
+              type="button"
+              className={
+                loginMethod === "password"
+                  ? "trust-method active"
+                  : "trust-method"
+              }
+              onClick={() =>
+                switchLoginMethod("password")
+              }
+            >
+              <User size={18} />
+              Password
+            </button>
 
-            {/* USERNAME */}
+            <button
+              type="button"
+              className={
+                loginMethod === "otp"
+                  ? "trust-method active"
+                  : "trust-method"
+              }
+              onClick={() =>
+                switchLoginMethod("otp")
+              }
+            >
+              <Mail size={18} />
+              Email OTP
+            </button>
 
-            <div className="trust-form-group">
+          </div>
 
-              <label htmlFor="username">
-                Username
-              </label>
+          {/* PASSWORD LOGIN */}
 
-              <div className="trust-input">
+          {loginMethod === "password" && (
 
-                <div className="trust-input-icon">
-                  <User size={20} />
+            <form
+              className="trust-form"
+              onSubmit={handlePasswordLogin}
+            >
+
+              <div className="trust-form-group">
+
+                <label htmlFor="username">
+                  Username
+                </label>
+
+                <div className="trust-input">
+
+                  <div className="trust-input-icon">
+                    <User size={20} />
+                  </div>
+
+                  <input
+                    id="username"
+                    type="text"
+                    value={username}
+                    onChange={(event) =>
+                      setUsername(
+                        event.target.value
+                      )
+                    }
+                    placeholder="Enter username"
+                    autoComplete="username"
+                    required
+                  />
+
                 </div>
-
-                <input
-                  id="username"
-                  type="text"
-                  value={username}
-                  onChange={(event) =>
-                    setUsername(event.target.value)
-                  }
-                  placeholder="Enter username"
-                  autoComplete="off"
-                  required
-                />
 
               </div>
 
-            </div>
+              <div className="trust-form-group">
 
+                <label htmlFor="password">
+                  Password
+                </label>
 
-            {/* PASSWORD */}
+                <div className="trust-input">
 
-            <div className="trust-form-group">
+                  <div className="trust-input-icon">
+                    <Lock size={20} />
+                  </div>
 
-              <label htmlFor="password">
-                Password
-              </label>
+                  <input
+                    id="password"
+                    type={
+                      showPassword
+                        ? "text"
+                        : "password"
+                    }
+                    value={password}
+                    onChange={(event) =>
+                      setPassword(
+                        event.target.value
+                      )
+                    }
+                    placeholder="Enter password"
+                    autoComplete="current-password"
+                    required
+                  />
 
-              <div className="trust-input">
+                  <button
+                    type="button"
+                    className="trust-password-toggle"
+                    onClick={() =>
+                      setShowPassword(
+                        !showPassword
+                      )
+                    }
+                    aria-label={
+                      showPassword
+                        ? "Hide password"
+                        : "Show password"
+                    }
+                  >
+                    {showPassword ? (
+                      <EyeOff size={20} />
+                    ) : (
+                      <Eye size={20} />
+                    )}
+                  </button>
 
-                <div className="trust-input-icon">
-                  <Lock size={20} />
                 </div>
 
-                <input
-                  id="password"
-                  type={
-                    showPassword
-                      ? "text"
-                      : "password"
-                  }
-                  value={password}
-                  onChange={(event) =>
-                    setPassword(event.target.value)
-                  }
-                  placeholder="Enter password"
-                  autoComplete="new-password"
-                  required
-                />
+              </div>
+
+              {error && (
+                <div className="trust-error">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="trust-signin"
+                disabled={loading}
+              >
+
+                {loading ? (
+                  <span>
+                    Signing in...
+                  </span>
+                ) : (
+                  <>
+                    <span>
+                      Sign in
+                    </span>
+
+                    <ArrowRight size={21} />
+                  </>
+                )}
+
+              </button>
+
+            </form>
+
+          )}
+
+          {/* EMAIL OTP LOGIN */}
+
+          {loginMethod === "otp" && (
+
+            <form
+              className="trust-form"
+              onSubmit={handleVerifyOTP}
+            >
+
+              <div className="trust-form-group">
+
+                <label htmlFor="email">
+                  Administrator Email
+                </label>
+
+                <div className="trust-input">
+
+                  <div className="trust-input-icon">
+                    <Mail size={20} />
+                  </div>
+
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(event) =>
+                      setEmail(
+                        event.target.value
+                      )
+                    }
+                    placeholder="Enter administrator email"
+                    autoComplete="email"
+                    disabled={otpRequested}
+                    required
+                  />
+
+                </div>
+
+              </div>
+
+              {!otpRequested && (
 
                 <button
                   type="button"
-                  className="trust-password-toggle"
-                  onClick={() =>
-                    setShowPassword(!showPassword)
-                  }
-                  aria-label={
-                    showPassword
-                      ? "Hide password"
-                      : "Show password"
-                  }
+                  className="trust-signin"
+                  onClick={handleRequestOTP}
+                  disabled={loading}
                 >
-                  {showPassword ? (
-                    <EyeOff size={20} />
+
+                  {loading ? (
+                    <span>
+                      Sending OTP...
+                    </span>
                   ) : (
-                    <Eye size={20} />
+                    <>
+                      <span>
+                        Send Email OTP
+                      </span>
+
+                      <ArrowRight size={21} />
+                    </>
                   )}
+
                 </button>
 
-              </div>
-
-            </div>
-
-
-            {/* ERROR */}
-
-            {error && (
-              <div className="trust-error">
-                {error}
-              </div>
-            )}
-
-
-            {/* SIGN IN */}
-
-            <button
-              type="submit"
-              className="trust-signin"
-              disabled={loading}
-            >
-
-              {loading ? (
-                <span>Signing in...</span>
-              ) : (
-                <>
-                  <span>Sign in</span>
-                  <ArrowRight size={21} />
-                </>
               )}
 
-            </button>
+              {otpRequested && (
 
-          </form>
+                <>
+                  <div className="trust-form-group">
 
+                    <label htmlFor="otp">
+                      Enter OTP
+                    </label>
 
-          {/* SECURITY */}
+                    <div className="trust-input">
+
+                      <div className="trust-input-icon">
+                        <ShieldCheck size={20} />
+                      </div>
+
+                      <input
+                        id="otp"
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={6}
+                        value={otp}
+                        onChange={(event) =>
+                          setOtp(
+                            event.target.value.replace(
+                              /\D/g,
+                              ""
+                            )
+                          )
+                        }
+                        placeholder="Enter 6-digit OTP"
+                        autoComplete="one-time-code"
+                        required
+                      />
+
+                    </div>
+
+                  </div>
+
+                  {message && (
+                    <div className="trust-success">
+                      {message}
+                    </div>
+                  )}
+
+                  {error && (
+                    <div className="trust-error">
+                      {error}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    className="trust-signin"
+                    disabled={loading}
+                  >
+
+                    {loading ? (
+                      <span>
+                        Verifying...
+                      </span>
+                    ) : (
+                      <>
+                        <span>
+                          Verify OTP
+                        </span>
+
+                        <ArrowRight size={21} />
+                      </>
+                    )}
+
+                  </button>
+
+                  <button
+                    type="button"
+                    className="trust-otp-back"
+                    onClick={() =>
+                      switchLoginMethod("otp")
+                    }
+                  >
+                    Use a different email
+                  </button>
+
+                </>
+
+              )}
+
+              {!otpRequested && error && (
+                <div className="trust-error">
+                  {error}
+                </div>
+              )}
+
+            </form>
+
+          )}
 
           <div className="trust-security">
             <ShieldCheck size={19} />
+
             <span>
               Protected administrator access
             </span>
           </div>
-
-
-          {/* FOOTER */}
 
           <div className="trust-footer">
             TrustVision Identity Screening

@@ -1787,3 +1787,33 @@
     gap: 5px;
   }
 }
+
+
+.history-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding-top: 18px;
+  margin-top: 8px;
+  border-top: 1px solid #e8edf5;
+}
+
+.history-all-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  background: #0878ed;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.history-all-button:hover {
+  background: #0564ca;
+  transform: translateY(-1px);
+}

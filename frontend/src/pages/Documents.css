@@ -879,3 +879,30 @@
     text-align: left;
   }
 }
+
+
+.verification-history-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.verification-history-status.approved {
+  background: #e7f8ee;
+  color: #16834a;
+}
+
+.verification-history-status.pending {
+  background: #fff4d8;
+  color: #986400;
+}
+
+.verification-history-status.request {
+  background: #eaf2ff;
+  color: #245fc7;
+}

@@ -109,6 +109,7 @@ def detect_blink(image_bytes: bytes) -> bool:
     return ear < 0.20
 
 
+
 def detect_liveness_sequence(frames: list[bytes]) -> bool:
     if len(frames) < 3:
         return False
@@ -131,25 +132,29 @@ def detect_liveness_sequence(frames: list[bytes]) -> bool:
         face = faces[0]
         landmarks = getattr(face, "landmark_2d_106", None)
 
-        if landmarks is None:
+        if landmarks is None or len(landmarks) <= 46:
             continue
 
         nose = landmarks[46]
-        nose_positions.append(float(nose[0]))
-
         bbox = face.bbox
-        face_widths.append(float(bbox[2] - bbox[0]))
 
-    if len(nose_positions) < 3 or not face_widths:
+        face_width = float(bbox[2] - bbox[0])
+
+        if face_width <= 0:
+            continue
+
+        # Normalize the nose position relative to the face box.
+        normalized_nose_x = (
+            float(nose[0]) - float(bbox[0])
+        ) / face_width
+
+        nose_positions.append(normalized_nose_x)
+        face_widths.append(face_width)
+
+    if len(nose_positions) < 3:
         return False
 
     movement = max(nose_positions) - min(nose_positions)
-    average_face_width = sum(face_widths) / len(face_widths)
 
-    if average_face_width <= 0:
-        return False
-
-    # Normalize movement to face size to handle different camera distances.
-    relative_movement = movement / average_face_width
-
-    return relative_movement > 0.04
+    # Tolerant threshold for modest left/right head movement.
+    return movement > 0.025

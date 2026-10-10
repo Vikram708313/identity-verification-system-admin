@@ -1,14 +1,10 @@
 ﻿
-from app.registry.face_upload import router as face_upload_router
-
-from app.registry.screening_cases import router as screening_cases_router
-from app.registry.blockchain_ledger import router as blockchain_ledger_router
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 # =====================================================
-# EXISTING DATABASE
+# DATABASE
 # =====================================================
 
 from app.database.connection import (
@@ -45,14 +41,20 @@ from app.qr.routes import router as qr_router
 # IDENTITY REGISTRY ROUTERS
 # =====================================================
 
-from app.registry.routes import router as registry_router
-from app.registry.face_verification import router as registry_face_verification_router
-from app.registry.document_upload import router as document_upload_router
-
-# NEW: OCR DOCUMENT VERIFICATION ROUTER
+from app.registry.routes import router as registry_router
+from app.registry.face_verification import (
+    router as registry_face_verification_router,
+)
+from app.registry.document_upload import (
+    router as document_upload_router,
+)
 from app.registry.ocr_verification import (
     router as ocr_verification_router,
 )
+
+from app.registry.face_upload import router as face_upload_router
+from app.registry.screening_cases import router as screening_cases_router
+from app.registry.blockchain_ledger import router as blockchain_ledger_router
 
 # =====================================================
 # AUDIT
@@ -61,7 +63,7 @@ from app.registry.ocr_verification import (
 from app.audit import verify_audit_chain
 
 # =====================================================
-# INITIALIZE EXISTING DATABASE
+# INITIALIZE DATABASE
 # =====================================================
 
 initialize_database()
@@ -99,46 +101,36 @@ print("========================================")
 print("REGISTERING API ROUTERS")
 print("========================================")
 
-app.include_router(auth_router)
-print("AUTH ROUTER REGISTERED")
+routers = [
+    (auth_router, "AUTH"),
+    (otp_router, "OTP"),
+    (face_router, "FACE"),
+    (verification_router, "VERIFICATION"),
+    (people_router, "PEOPLE"),
+    (documents_router, "DOCUMENT"),
+    (qr_router, "QR"),
+    (registry_router, "IDENTITY REGISTRY"),
+    (document_upload_router, "DOCUMENT UPLOAD"),
+    (face_upload_router, "FACE UPLOAD"),
+    (
+        registry_face_verification_router,
+        "REGISTRY FACE VERIFICATION",
+    ),
+    (ocr_verification_router, "OCR VERIFICATION"),
+    (screening_cases_router, "SCREENING CASES"),
+    (blockchain_ledger_router, "BLOCKCHAIN LEDGER"),
+]
 
-app.include_router(otp_router)
-print("OTP ROUTER REGISTERED")
-
-app.include_router(face_router)
-print("FACE ROUTER REGISTERED")
-
-app.include_router(verification_router)
-print("VERIFICATION ROUTER REGISTERED")
-
-app.include_router(people_router)
-print("PEOPLE ROUTER REGISTERED")
-
-app.include_router(documents_router)
-print("DOCUMENT ROUTER REGISTERED")
-
-app.include_router(qr_router)
-print("QR ROUTER REGISTERED")
-
-# Separate identity registry database
-app.include_router(registry_router)
-app.include_router(document_upload_router)
-app.include_router(face_upload_router)
-app.include_router(registry_face_verification_router)
-print("IDENTITY REGISTRY ROUTERS REGISTERED")
-
-# OCR document verification
-app.include_router(ocr_verification_router)
-app.include_router(screening_cases_router)
-app.include_router(blockchain_ledger_router)
-print("OCR VERIFICATION ROUTER REGISTERED")
+for router, router_name in routers:
+    app.include_router(router)
+    print(f"{router_name} ROUTER REGISTERED")
 
 print("========================================")
 print("ROUTERS REGISTERED")
 print("========================================")
 
 # =====================================================
-# ROOT
+# ROOT ENDPOINT
 # =====================================================
 
 @app.get("/")
@@ -150,18 +142,15 @@ def root():
     }
 
 # =====================================================
-# HEALTH
+# HEALTH ENDPOINT
 # =====================================================
 
 @app.get("/health")
 def health():
-    return {
-        "status": "healthy"
-    }
+    return {"status": "healthy"}
 
 # =====================================================
-# EXISTING PEOPLE ENDPOINT
-# Uses the original database
+# PEOPLE ENDPOINT
 # =====================================================
 
 @app.get("/people")
@@ -183,8 +172,7 @@ def get_people(
     ]
 
 # =====================================================
-# EXISTING DOCUMENTS ENDPOINT
-# Uses the original database
+# DOCUMENTS ENDPOINT
 # =====================================================
 
 @app.get("/documents")
@@ -208,8 +196,7 @@ def get_documents(
     ]
 
 # =====================================================
-# EXISTING WATCHLIST ENDPOINT
-# Uses the original database
+# WATCHLIST ENDPOINT
 # =====================================================
 
 @app.get("/watchlist")
@@ -231,7 +218,7 @@ def get_watchlist(
     ]
 
 # =====================================================
-# EXISTING AUDIT ENDPOINT
+# AUDIT ENDPOINT
 # =====================================================
 
 @app.get("/audit")
@@ -259,7 +246,7 @@ def get_audit_logs(
     ]
 
 # =====================================================
-# EXISTING AUDIT INTEGRITY ENDPOINT
+# AUDIT INTEGRITY ENDPOINT
 # =====================================================
 
 @app.get("/audit/integrity")
@@ -270,7 +257,7 @@ def check_audit_integrity(
     return verify_audit_chain(db)
 
 # =====================================================
-# PRINT FINAL REGISTERED ROUTES
+# PRINT REGISTERED ROUTES
 # =====================================================
 
 print("========================================")
@@ -285,7 +272,3 @@ for route in app.routes:
         print(f"{methods if methods else ''} {path}")
 
 print("========================================")
-
-
-
-

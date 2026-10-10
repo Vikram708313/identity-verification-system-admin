@@ -1,7 +1,8 @@
+
 import {
   Home,
   Users,
-  FileCheck,
+  History,
   ScanFace,
   UserCircle,
 } from "lucide-react";
@@ -20,9 +21,9 @@ export default function Sidebar() {
       icon: Users,
     },
     {
-      name: "Documents",
-      path: "/documents",
-      icon: FileCheck,
+      name: "Verification History",
+      path: "/verification-history",
+      icon: History,
     },
     {
       name: "Verify with AI",

@@ -1,3 +1,4 @@
+
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Login from "./pages/Login";
@@ -6,19 +7,15 @@ import People from "./pages/People";
 import Documents from "./pages/Documents";
 import Verification from "./pages/Verification";
 import Profile from "./pages/Profile";
+import VerificationHistory from "./pages/VerificationHistory";
 
 import ProtectedRoute from "./components/ProtectedRoute";
-
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-
-        <Route
-          path="/"
-          element={<Login />}
-        />
+        <Route path="/" element={<Login />} />
 
         <Route
           path="/dashboard"
@@ -48,6 +45,15 @@ function App() {
         />
 
         <Route
+          path="/verification-history"
+          element={
+            <ProtectedRoute>
+              <VerificationHistory />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/verification"
           element={
             <ProtectedRoute>
@@ -64,7 +70,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
       </Routes>
     </BrowserRouter>
   );

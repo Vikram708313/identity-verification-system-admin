@@ -4791,3 +4791,8 @@ html[data-theme="dark"] .mobile-nav-item.active {
   background: #323943;
   color: #f1f3f5;
 }
+
+.mobile-nav-item[href="/verification"] svg {
+  position: relative;
+  top: -2px;
+}

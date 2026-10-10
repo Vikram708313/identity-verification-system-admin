@@ -29,17 +29,6 @@ async def compare_face_images(
     if not live_bytes:
         raise HTTPException(400, "Face image is required.")
 
-    if len(liveness_frames) < 3:
-        raise HTTPException(400, "At least 3 liveness frames are required.")
-
-    frames = [await frame.read() for frame in liveness_frames]
-
-    if not detect_liveness_sequence(frames):
-        raise HTTPException(
-            400,
-            "Liveness verification failed. Turn your head slightly left and right, then try again.",
-        )
-
     try:
         live_embedding = get_face_embedding(live_bytes)
         live_embedding = live_embedding / np.linalg.norm(live_embedding)
@@ -87,7 +76,7 @@ async def compare_face_images(
     if best_person is None or best_score < 0.50:
         return {
             "verified": False,
-            "liveness_verified": True,
+            "liveness_verified": False,
             "match_score": score,
             "status": "FAIL" if best_score < 0.35 else "REVIEW",
             "person": None,
@@ -96,7 +85,7 @@ async def compare_face_images(
 
     return {
         "verified": True,
-        "liveness_verified": True,
+        "liveness_verified": False,
         "match_score": score,
         "similarity": round(best_score, 4),
         "status": "PASS",

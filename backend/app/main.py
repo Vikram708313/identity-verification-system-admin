@@ -1,9 +1,14 @@
+﻿
+from app.registry.face_upload import router as face_upload_router
+
+from app.registry.screening_cases import router as screening_cases_router
+from app.registry.blockchain_ledger import router as blockchain_ledger_router
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 # =====================================================
-# DATABASE
+# EXISTING DATABASE
 # =====================================================
 
 from app.database.connection import (
@@ -19,7 +24,7 @@ from app.database.models import (
 )
 
 # =====================================================
-# AUTH
+# AUTHENTICATION AND OTP
 # =====================================================
 
 from app.auth.routes import router as auth_router
@@ -27,7 +32,7 @@ from app.auth.otp import router as otp_router
 from app.auth.dependencies import get_current_admin
 
 # =====================================================
-# OTHER ROUTERS
+# EXISTING ROUTERS
 # =====================================================
 
 from app.face.routes import router as face_router
@@ -37,29 +42,39 @@ from app.documents.routes import router as documents_router
 from app.qr.routes import router as qr_router
 
 # =====================================================
+# IDENTITY REGISTRY ROUTERS
+# =====================================================
+
+from app.registry.routes import router as registry_router
+from app.registry.face_verification import router as registry_face_verification_router
+from app.registry.document_upload import router as document_upload_router
+
+# NEW: OCR DOCUMENT VERIFICATION ROUTER
+from app.registry.ocr_verification import (
+    router as ocr_verification_router,
+)
+
+# =====================================================
 # AUDIT
 # =====================================================
 
 from app.audit import verify_audit_chain
 
-
 # =====================================================
-# INITIALIZE DATABASE
+# INITIALIZE EXISTING DATABASE
 # =====================================================
 
 initialize_database()
-
 
 # =====================================================
 # CREATE FASTAPI APP
 # =====================================================
 
 app = FastAPI(
-    title="AI Identity Verification System",
+    title="TrustVision AI - Identity Verification System",
     description="Local synthetic identity verification prototype",
-    version="0.4.0",
+    version="0.6.0",
 )
-
 
 # =====================================================
 # CORS
@@ -76,9 +91,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 # =====================================================
-# REGISTER ROUTERS
+# REGISTER ALL ROUTERS
 # =====================================================
 
 print("========================================")
@@ -106,10 +120,22 @@ print("DOCUMENT ROUTER REGISTERED")
 app.include_router(qr_router)
 print("QR ROUTER REGISTERED")
 
+# Separate identity registry database
+app.include_router(registry_router)
+app.include_router(document_upload_router)
+app.include_router(face_upload_router)
+app.include_router(registry_face_verification_router)
+print("IDENTITY REGISTRY ROUTERS REGISTERED")
+
+# OCR document verification
+app.include_router(ocr_verification_router)
+app.include_router(screening_cases_router)
+app.include_router(blockchain_ledger_router)
+print("OCR VERIFICATION ROUTER REGISTERED")
+
 print("========================================")
 print("ROUTERS REGISTERED")
 print("========================================")
-
 
 # =====================================================
 # ROOT
@@ -118,11 +144,10 @@ print("========================================")
 @app.get("/")
 def root():
     return {
-        "message": "Identity Verification System API is running",
+        "message": "TrustVision AI Identity Verification API is running",
         "environment": "local",
         "data_type": "synthetic_demo_data",
     }
-
 
 # =====================================================
 # HEALTH
@@ -134,9 +159,9 @@ def health():
         "status": "healthy"
     }
 
-
 # =====================================================
-# PEOPLE
+# EXISTING PEOPLE ENDPOINT
+# Uses the original database
 # =====================================================
 
 @app.get("/people")
@@ -157,9 +182,9 @@ def get_people(
         for person in people
     ]
 
-
 # =====================================================
-# DOCUMENTS
+# EXISTING DOCUMENTS ENDPOINT
+# Uses the original database
 # =====================================================
 
 @app.get("/documents")
@@ -182,9 +207,9 @@ def get_documents(
         for document in documents
     ]
 
-
 # =====================================================
-# WATCHLIST
+# EXISTING WATCHLIST ENDPOINT
+# Uses the original database
 # =====================================================
 
 @app.get("/watchlist")
@@ -205,9 +230,8 @@ def get_watchlist(
         for record in records
     ]
 
-
 # =====================================================
-# AUDIT
+# EXISTING AUDIT ENDPOINT
 # =====================================================
 
 @app.get("/audit")
@@ -234,9 +258,8 @@ def get_audit_logs(
         for record in records
     ]
 
-
 # =====================================================
-# AUDIT INTEGRITY
+# EXISTING AUDIT INTEGRITY ENDPOINT
 # =====================================================
 
 @app.get("/audit/integrity")
@@ -246,9 +269,8 @@ def check_audit_integrity(
 ):
     return verify_audit_chain(db)
 
-
 # =====================================================
-# PRINT FINAL ROUTES
+# PRINT FINAL REGISTERED ROUTES
 # =====================================================
 
 print("========================================")
@@ -260,8 +282,10 @@ for route in app.routes:
     methods = getattr(route, "methods", None)
 
     if path:
-        print(
-            f"{methods if methods else ''} {path}"
-        )
+        print(f"{methods if methods else ''} {path}")
 
 print("========================================")
+
+
+
+

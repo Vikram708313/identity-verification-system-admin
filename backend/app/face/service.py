@@ -1,17 +1,31 @@
+
 import cv2
 import numpy as np
-from insightface.app import FaceAnalysis
+
+# Load InsightFace only when face verification is requested.
+# This allows other API routes to start without importing ONNX.
+face_app = None
 
 
-face_app = FaceAnalysis(
-    name="buffalo_l",
-    providers=["CPUExecutionProvider"],
-)
+def get_face_app():
+    global face_app
 
-face_app.prepare(
-    ctx_id=0,
-    det_size=(640, 640),
-)
+    if face_app is None:
+        from insightface.app import FaceAnalysis
+
+        app = FaceAnalysis(
+            name="buffalo_l",
+            providers=["CPUExecutionProvider"],
+        )
+
+        app.prepare(
+            ctx_id=0,
+            det_size=(640, 640),
+        )
+
+        face_app = app
+
+    return face_app
 
 
 def get_face_embedding(image_bytes: bytes) -> np.ndarray:
@@ -21,7 +35,7 @@ def get_face_embedding(image_bytes: bytes) -> np.ndarray:
     if image is None:
         raise ValueError("Invalid image")
 
-    faces = face_app.get(image)
+    faces = get_face_app().get(image)
 
     if len(faces) == 0:
         raise ValueError("No face detected")
@@ -76,7 +90,7 @@ def detect_blink(image_bytes: bytes) -> bool:
     if image is None:
         return False
 
-    faces = face_app.get(image)
+    faces = get_face_app().get(image)
 
     if len(faces) != 1:
         return False
@@ -123,7 +137,7 @@ def detect_liveness_sequence(frames: list[bytes]) -> bool:
         if image is None:
             continue
 
-        faces = face_app.get(image)
+        faces = get_face_app().get(image)
 
         if len(faces) != 1:
             continue
@@ -149,7 +163,7 @@ def detect_liveness_sequence(frames: list[bytes]) -> bool:
     if average_face_width <= 0:
         return False
 
-    # Normalize movement to face size to handle different camera distances.
+    # Normalize movement to face size.
     relative_movement = movement / average_face_width
 
     return relative_movement > 0.04

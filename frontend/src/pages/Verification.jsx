@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { Html5Qrcode } from "html5-qrcode";
 
@@ -230,62 +230,39 @@ export default function Verification() {
 
     try {
       const formData = new FormData();
-
       formData.append("person_id", String(personId));
       formData.append("document_type", "AADHAAR");
-      formData.append(
-        "document_number",
-        "DEMO-AADHAAR-001"
-      );
+      formData.append("document_number", "DEMO-AADHAAR-001");
       formData.append("file", documentFile);
 
       const token = localStorage.getItem("access_token");
 
+      if (!token) {
+        throw new Error("Your session has expired. Please log in again.");
+      }
+
       const response = await axios.post(
-  `${API_BASE_URL}/face/compare`,
-  formData,
-  {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-    },
-  }
-);
-
-const score = response.data.match_score;
-
-setFaceScore(score);
-setFaceVerified(response.data.verified);
-
-if (response.data.verified && response.data.person) {
-  setPersonId(response.data.person.id);
-  setSelectedPerson(response.data.person);
-} else {
-  setPersonId(null);
-  setSelectedPerson(null);
-  setError(
-    response.data.message ||
-      `No confident face match found. Score: ${score}%`
-  );
-}
+        `${API_BASE_URL}/documents/verify`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       setDocumentResult(response.data);
 
       if (!response.data.verified) {
         setError(
           response.data.reason ||
-            "Document verification requires review."
+            "Document verification failed or requires manual review."
         );
-
-        if (response.data.status === "FAIL") {
-          setLoading(false);
-          return;
-        }
       }
 
-      await runAIAnalysis(
-        "document",
-        response.data
-      );
+      // Create a real verification record so the result screen and
+      // admin decision use the backend-generated verification_id.
+      await runAIAnalysis("document", response.data);
     } catch (err) {
       handleApiError(err);
     } finally {
@@ -836,7 +813,7 @@ if (response.data.verified && response.data.person) {
                       User ID #
                       {selectedPerson?.id ||
                         "-"}{" "}
-                      · Face match{" "}
+                      Â· Face match{" "}
                       {faceScore}%
                     </span>
                   </div>
@@ -892,7 +869,7 @@ if (response.data.verified && response.data.person) {
                   User ID #
                   {selectedPerson?.id ||
                     "-"}{" "}
-                  · Face match{" "}
+                  Â· Face match{" "}
                   {faceScore}%
                 </span>
               </div>
@@ -986,7 +963,7 @@ if (response.data.verified && response.data.person) {
 
               <div>
                 <p className="card-eyebrow">
-                  STEP 2 · DOCUMENT
+                  STEP 2 Â· DOCUMENT
                 </p>
 
                 <h2>
@@ -1095,7 +1072,7 @@ if (response.data.verified && response.data.person) {
 
               <div>
                 <p className="card-eyebrow">
-                  STEP 2 · QR
+                  STEP 2 Â· QR
                 </p>
 
                 <h2>
@@ -1286,7 +1263,7 @@ function VerifiedPerson({
           User ID #
           {selectedPerson?.id ||
             "-"}{" "}
-          · Face match{" "}
+          Â· Face match{" "}
           {faceScore}%
         </small>
       </div>
@@ -1415,7 +1392,7 @@ function AIResult({
           <div className="risk-score-bottom">
 
             <span>
-              0% · Lower Risk
+              0% Â· Lower Risk
             </span>
 
             <strong>
@@ -1423,7 +1400,7 @@ function AIResult({
             </strong>
 
             <span>
-              100% · Higher Risk
+              100% Â· Higher Risk
             </span>
 
           </div>

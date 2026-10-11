@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { Html5Qrcode } from "html5-qrcode";
 
@@ -151,7 +151,7 @@ export default function Verification() {
           });
 
           const response = await axios.post(
-            `${API_BASE_URL}/face/compare?person_id=${personId}`,
+            `${API_BASE_URL}/face/compare`,
             formData,
             {
               headers: {
@@ -166,6 +166,14 @@ export default function Verification() {
 
           setFaceScore(score);
           setFaceVerified(response.data.verified);
+
+          if (response.data.verified && response.data.person?.id) {
+            setPersonId(response.data.person.id);
+            setSelectedPerson(response.data.person);
+          } else {
+            setPersonId(null);
+            setSelectedPerson(null);
+          }
 
           if (!response.data.verified) {
             setError(

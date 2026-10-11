@@ -1,0 +1,61 @@
+﻿
+@router.get("/audit/verify")
+def verify_screening_audit_chain(
+    db: Session = Depends(get_identity_db),
+    current_admin=Depends(get_current_admin),
+):
+    audits = db.query(ScreeningReviewAudit).order_by(
+        ScreeningReviewAudit.id.asc()
+    ).all()
+
+    issues = []
+    expected_previous_hash = None
+
+    for audit in audits:
+        # Check whether this record links to the preceding record.
+        if audit.previous_hash != expected_previous_hash:
+            issues.append({
+                "audit_id": audit.id,
+                "problem": "PREVIOUS_HASH_MISMATCH",
+            })
+
+        # Reconstruct the exact payload used when the hash was created.
+        payload = {
+            "case_id": audit.case_id,
+            "reviewer": audit.reviewer,
+            "decision": audit.decision,
+            "reason": audit.reason,
+            "created_at": audit.created_at.isoformat(),
+            "previous_hash": audit.previous_hash,
+        }
+
+        canonical = json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        )
+
+        calculated_hash = hashlib.sha256(
+            canonical.encode("utf-8")
+        ).hexdigest()
+
+        if calculated_hash != audit.audit_hash:
+            issues.append({
+                "audit_id": audit.id,
+                "problem": "AUDIT_HASH_MISMATCH",
+            })
+
+        # The next record must point to this record's stored hash.
+        expected_previous_hash = audit.audit_hash
+
+    return {
+        "valid": len(issues) == 0,
+        "records_checked": len(audits),
+        "issues": issues,
+        "message": (
+            "Audit chain verification passed."
+            if not issues
+            else "Audit chain verification failed."
+        ),
+    }

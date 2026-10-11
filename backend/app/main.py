@@ -1,9 +1,4 @@
-from pathlib import Path
-from dotenv import load_dotenv
-
-# Load backend/.env before importing authentication modules
-BACKEND_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BACKEND_DIR / ".env")
+﻿
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -25,7 +20,7 @@ from app.database.models import (
 )
 
 # =====================================================
-# AUTH
+# AUTHENTICATION AND OTP
 # =====================================================
 
 from app.auth.routes import router as auth_router
@@ -33,7 +28,7 @@ from app.auth.otp import router as otp_router
 from app.auth.dependencies import get_current_admin
 
 # =====================================================
-# OTHER ROUTERS
+# EXISTING ROUTERS
 # =====================================================
 
 from app.face.routes import router as face_router
@@ -43,11 +38,29 @@ from app.documents.routes import router as documents_router
 from app.qr.routes import router as qr_router
 
 # =====================================================
+# IDENTITY REGISTRY ROUTERS
+# =====================================================
+
+from app.registry.routes import router as registry_router
+from app.registry.face_verification import (
+    router as registry_face_verification_router,
+)
+from app.registry.document_upload import (
+    router as document_upload_router,
+)
+from app.registry.ocr_verification import (
+    router as ocr_verification_router,
+)
+
+from app.registry.face_upload import router as face_upload_router
+from app.registry.screening_cases import router as screening_cases_router
+from app.registry.blockchain_ledger import router as blockchain_ledger_router
+
+# =====================================================
 # AUDIT
 # =====================================================
 
 from app.audit import verify_audit_chain
-
 
 # =====================================================
 # INITIALIZE DATABASE
@@ -55,17 +68,15 @@ from app.audit import verify_audit_chain
 
 initialize_database()
 
-
 # =====================================================
 # CREATE FASTAPI APP
 # =====================================================
 
 app = FastAPI(
-    title="AI Identity Verification System",
+    title="TrustVision AI - Identity Verification System",
     description="Local synthetic identity verification prototype",
-    version="0.4.0",
+    version="0.6.0",
 )
-
 
 # =====================================================
 # CORS
@@ -82,67 +93,64 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 # =====================================================
-# REGISTER ROUTERS
+# REGISTER ALL ROUTERS
 # =====================================================
 
 print("========================================")
 print("REGISTERING API ROUTERS")
 print("========================================")
 
-app.include_router(auth_router)
-print("AUTH ROUTER REGISTERED")
+routers = [
+    (auth_router, "AUTH"),
+    (otp_router, "OTP"),
+    (face_router, "FACE"),
+    (verification_router, "VERIFICATION"),
+    (people_router, "PEOPLE"),
+    (documents_router, "DOCUMENT"),
+    (qr_router, "QR"),
+    (registry_router, "IDENTITY REGISTRY"),
+    (document_upload_router, "DOCUMENT UPLOAD"),
+    (face_upload_router, "FACE UPLOAD"),
+    (
+        registry_face_verification_router,
+        "REGISTRY FACE VERIFICATION",
+    ),
+    (ocr_verification_router, "OCR VERIFICATION"),
+    (screening_cases_router, "SCREENING CASES"),
+    (blockchain_ledger_router, "BLOCKCHAIN LEDGER"),
+]
 
-app.include_router(otp_router)
-print("OTP ROUTER REGISTERED")
-
-app.include_router(face_router)
-print("FACE ROUTER REGISTERED")
-
-app.include_router(verification_router)
-print("VERIFICATION ROUTER REGISTERED")
-
-app.include_router(people_router)
-print("PEOPLE ROUTER REGISTERED")
-
-app.include_router(documents_router)
-print("DOCUMENT ROUTER REGISTERED")
-
-app.include_router(qr_router)
-print("QR ROUTER REGISTERED")
+for router, router_name in routers:
+    app.include_router(router)
+    print(f"{router_name} ROUTER REGISTERED")
 
 print("========================================")
 print("ROUTERS REGISTERED")
 print("========================================")
 
-
 # =====================================================
-# ROOT
+# ROOT ENDPOINT
 # =====================================================
 
 @app.get("/")
 def root():
     return {
-        "message": "Identity Verification System API is running",
+        "message": "TrustVision AI Identity Verification API is running",
         "environment": "local",
         "data_type": "synthetic_demo_data",
     }
 
-
 # =====================================================
-# HEALTH
+# HEALTH ENDPOINT
 # =====================================================
 
 @app.get("/health")
 def health():
-    return {
-        "status": "healthy"
-    }
-
+    return {"status": "healthy"}
 
 # =====================================================
-# PEOPLE
+# PEOPLE ENDPOINT
 # =====================================================
 
 @app.get("/people")
@@ -163,9 +171,8 @@ def get_people(
         for person in people
     ]
 
-
 # =====================================================
-# DOCUMENTS
+# DOCUMENTS ENDPOINT
 # =====================================================
 
 @app.get("/documents")
@@ -188,9 +195,8 @@ def get_documents(
         for document in documents
     ]
 
-
 # =====================================================
-# WATCHLIST
+# WATCHLIST ENDPOINT
 # =====================================================
 
 @app.get("/watchlist")
@@ -211,9 +217,8 @@ def get_watchlist(
         for record in records
     ]
 
-
 # =====================================================
-# AUDIT
+# AUDIT ENDPOINT
 # =====================================================
 
 @app.get("/audit")
@@ -240,9 +245,8 @@ def get_audit_logs(
         for record in records
     ]
 
-
 # =====================================================
-# AUDIT INTEGRITY
+# AUDIT INTEGRITY ENDPOINT
 # =====================================================
 
 @app.get("/audit/integrity")
@@ -252,9 +256,8 @@ def check_audit_integrity(
 ):
     return verify_audit_chain(db)
 
-
 # =====================================================
-# PRINT FINAL ROUTES
+# PRINT REGISTERED ROUTES
 # =====================================================
 
 print("========================================")
@@ -266,8 +269,6 @@ for route in app.routes:
     methods = getattr(route, "methods", None)
 
     if path:
-        print(
-            f"{methods if methods else ''} {path}"
-        )
+        print(f"{methods if methods else ''} {path}")
 
 print("========================================")
